@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fit Reco</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <header>
+    <h1>Fit Reco</h1>
+  </header>
+
+  <main>
+    <section class="today-workout">
+      <h2>今日は足トレの日！</h2>
+      <p class="workout-meta"> 所要時間: 約45分 / 3種目</p>
+
+      <ul>
+        <li>ブルガリアンスクワット</li>
+        <li>ヒップアブダクション</li>
+        <li>レッグプレス</li>
+      </ul>
+
+      <button class="workout-button" id="start-workout-btn">ワークアウトを開始</button>
+    </section>
+
+    <!-- モチベーション・成果カードエリア -->
+    <h3>トレーニング記録</h3>
+    <div class="record-header">
+      <p id="title"></p>
+      <div class="btn">
+        <span id="prev">&laquo;</span>
+        <span id="next">&raquo;</span>
+      </div>
+    </div>
+
+    <section class="stats-summary">
+      <div class="stat-card">
+        <span class="stat-label">今月の総重量</span>
+        <span class="stat-value">1,250 <small>kg</small></span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">消費カロリー</span>
+        <span class="stat-value">420 <small>kcal</small></span>
+      </div>
+    </section>
+
+    <!-- カレンダーエリア -->
+    <section class="calendar-section">
+      <table>
+        <thead>
+          <tr id="week"></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="script.js" defer></script>
+</body>
+
+</html>

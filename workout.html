@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="workout.css">
+  <title>ワークアウト</title>
+</head>
+
+<body>
+  <header>
+    <a href="index.html">&lt; </a>
+    <h1>Fit Reco</h1>
+  </header>
+  <div class="container">
+    <h1 id="today"></h1>
+    <ul id="todos">
+      <li>
+        <label>
+          <h2>ブルガリアンスクワット</h2>
+        </label>
+        <table>
+          <thead>
+            <tr>
+              <td>セット</td>
+              <td>kg</td>
+              <td>回</td>
+              <td>完了</td>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>50</td>
+              <td>10</td>
+              <td><input type="checkbox"></td>
+            </tr>
+          </tbody>
+        </table>
+        <button>ー セット削除</button>
+        <button>＋ セット追加</button>
+      </li>
+    </ul>
+    <form id="add-form">
+      <input type="text">
+      <button>Add</button>
+    </form>
+  </div>
+  <script src="workout.js"></script>
+</body>
+</html>

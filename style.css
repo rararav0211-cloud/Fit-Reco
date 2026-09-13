@@ -1,0 +1,220 @@
+@charset 'UTF-8';
+
+/* 全体設定 */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #f8f9fa; /* うっすらグレーにするとカード背景（白）が引き立ちます */
+  color: #333;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  margin: 0 auto;
+  padding: 0;
+  width: 100%;
+  max-width: 600px; /* PCで見てもスマホサイズを維持 */
+  min-height: 100vh;
+  position: relative;
+}
+
+/* ヘッダーのスタイル */
+header {
+  height: 48px;
+  padding: 0 20px;
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #eee;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+header h1 {
+  font-size: 18px;
+  margin: 0;
+  font-weight: bold;
+  color: #2f3542;
+}
+
+
+/* メインコンテンツエリア（下部ナビに被らないよう余白を設定） */
+main {
+  padding: 16px 16px 80px 16px;
+}
+
+/* 今日のワークアウトカード */
+.today-workout {
+  background-color: #ffffff;
+  padding: 24px 20px;
+  border-radius: 20px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06); /* 柔らかい影に変更 */
+}
+
+.today-workout h2 {
+  font-weight: bold;
+  margin: 0 0 12px 0;
+  font-size: 22px;
+  color: #2f3542;
+}
+
+.today-workout ul {
+  list-style: none;
+  font-size: 18px;
+  padding: 0; /* ul特有の左余白を消去 */
+  margin: 16px 0;
+}
+
+.today-workout li {
+  padding: 8px 0;
+  border-bottom: 1px dashed #eee;
+}
+
+.today-workout li:last-child {
+  border-bottom: none;
+}
+
+.today-workout p {
+  color: #747d8c;
+  font-size: 14px;
+  margin: 8px 0 16px 0;
+}
+
+/* ワークアウト開始ボタン */
+.workout-button {
+  background: linear-gradient(135deg, #70a1ff, #1e90ff); /* さわやかなグラデーション */
+  color: white;
+  border: none;
+  padding: 16px 20px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  margin: 20px auto 0 auto;
+  display: block;
+  width: 100%; /* 親要素いっぱいに広げる */
+  text-align: center;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(30, 144, 255, 0.3);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+
+/* ボタンを押した時のぷにっとした動き */
+.workout-button:active {
+  transform: scale(0.98);
+  box-shadow: 0 2px 6px rgba(30, 144, 255, 0.2);
+}
+
+/* 成果・モチベーションカードの親要素（横並びで均等配置） */
+.record-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px
+}
+
+#title {
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.btn {
+  display: flex;
+  gap: 32px
+}
+
+.stats-summary {
+  margin-top: 20px;
+  display: flex;
+  gap: 12px; /* カード同士の間隔 */
+}
+
+/* カード単体（縦並びレイアウト） */
+.stat-card {
+  flex: 1; /* 幅を等分に広げる */
+  background-color: #ffffff;
+  padding: 16px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column; /* 要素を縦に並べる */
+  align-items: center;    /* 中央寄せ */
+  justify-content: center;
+}
+
+/* ラベル（今週の総重量など） */
+.stat-label {
+  font-size: 12px;
+  color: #a4b0be;
+  font-weight: bold;
+  margin-bottom: 6px; /* 数値との間に少し余白を作成 */
+}
+
+/* 数値（1,250 kgなど） */
+.stat-value {
+  font-size: 22px;
+  font-weight: bold;
+  color: #2f3542;
+}
+
+/* 単位（kg, kcal）の文字サイズ調整 */
+.stat-value small {
+  font-size: 13px;
+  font-weight: normal;
+  color: #747d8c;
+  margin-left: 2px;
+}
+
+/* カレンダーのスタイル */
+table {
+  background-color: #ffffff;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid #eccc68; /* アクセントカラーの枠線 */
+  border-radius: 16px;
+  overflow: hidden;
+  font-size: 14px;
+  width: 100%;
+  height: 320px;
+  margin-top: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+th, td {
+  padding: 8px;
+  text-align: center;
+}
+
+tbody td:first-child { color: #ff4757; } /* 日曜日：赤 */
+tbody td:last-child { color: #2ed573; }  /* 土曜日：緑/青 */
+
+td.disabled {
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+td.today {
+  font-weight: bold;
+  background-color: #ffeaa7; /* 今日の日付を目立たせる */
+  border-radius: 50%;
+}
+
+/* ナビゲーションボタンの共通設定 */
+#prev, #next {
+  cursor: pointer;
+  user-select: none;
+  font-size: 18px;
+  transition: opacity 0.2s;
+}
+
+/* 今月以降（未来）で押せない時のグレーアウト設定 */
+#next.disabled {
+  opacity: 0.2;             /* 薄く表示 */
+  cursor: default;           /* カーソルを通常のポインターに戻す */
+  pointer-events: none;     /* クリックイベントを無効化 */
+}
+
+#week {
+  opacity: 0.7;
+}
