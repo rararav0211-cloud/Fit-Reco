@@ -1,3 +1,4 @@
+@charset 'UTF-8';
 
 * {
   box-sizing: border-box;
@@ -136,4 +137,29 @@ form button {
   border-radius: 4px;
   cursor: pointer;
   font-weight: bold;
+}
+
+/* ワークアウト開始ボタン */
+.workout-button {
+  background: linear-gradient(135deg, #70a1ff, #1e90ff); /* さわやかなグラデーション */
+  color: white;
+  border: none;
+  padding: 16px 20px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  margin: 20px auto 0 auto;
+  display: block;
+  width: 100%; /* 親要素いっぱいに広げる */
+  text-align: center;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(30, 144, 255, 0.3);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+
+/* ボタンを押した時のぷにっとした動き */
+.workout-button:active {
+  transform: scale(0.98);
+  box-shadow: 0 2px 6px rgba(30, 144, 255, 0.2);
 }

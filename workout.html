@@ -16,36 +16,12 @@
   <div class="container">
     <h1 id="today"></h1>
     <ul id="todos">
-      <li>
-        <label>
-          <h2>ブルガリアンスクワット</h2>
-        </label>
-        <table>
-          <thead>
-            <tr>
-              <td>セット</td>
-              <td>kg</td>
-              <td>回</td>
-              <td>完了</td>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>1</td>
-              <td>50</td>
-              <td>10</td>
-              <td><input type="checkbox"></td>
-            </tr>
-          </tbody>
-        </table>
-        <button>ー セット削除</button>
-        <button>＋ セット追加</button>
-      </li>
     </ul>
     <form id="add-form">
-      <input type="text">
+      <input type="text" placeholder="種目名を入力">
       <button>Add</button>
     </form>
+    <button id="workout-complete" class="workout-button">ワークアウト完了</button>
   </div>
   <script src="workout.js"></script>
 </body>

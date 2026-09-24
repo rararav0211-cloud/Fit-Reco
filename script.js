@@ -9,6 +9,24 @@
   let year = today.getFullYear();
   let month = today.getMonth();
 
+
+  //ワークアウト開始ボタンを押した日付がローカルストレージに保存される
+  function getWorkoutDates() {
+    return JSON.parse(localStorage.getItem('workoutDates') || '[]');
+  }
+
+  function getTodayString() {
+    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  }
+
+  function saveWorkoutDate(dateString) {
+    const dates = getWorkoutDates();
+    if (!dates.includes(dateString)) {
+      dates.push(dateString);
+      localStorage.setItem('workoutDates', JSON.stringify(dates));
+    }
+  }
+
   function getCalendarHead() {
     const dates = [];
     const d = new Date(year, month, 0).getDate();
@@ -28,10 +46,11 @@
   function getCalendarBody() {
     const dates = [];
     const lastDate = new Date(year, month + 1, 0).getDate();
+    const workoutDates = getWorkoutDates();
 
     for (let i = 1; i <= lastDate; i++) {
       const targetDate = new Date(year, month, i);
-
+      const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
       const isToday = targetDate.getTime() === todayZero.getTime();
       const isFuture = targetDate.getTime() > todayZero.getTime();
 
@@ -39,6 +58,7 @@
         date: i,
         isToday: isToday,
         isDisabled: isFuture,
+        isWorkedOut: workoutDates.includes(fullDate),
         fullDate: `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`
       });
     }
@@ -116,6 +136,11 @@
         if (date.isToday) {
           td.classList.add('today');
         }
+
+        if (date.isWorkedOut) {
+          td.classList.add('worked-out');
+        }
+
         if (date.isDisabled) {
           td.classList.add('disabled');
         } else {
@@ -129,6 +154,21 @@
       });
       document.querySelector('tbody')?.appendChild(tr);
     });
+  }
+
+  //今月の総重量
+  function renderMonthTotalWeight() {
+    const monthTotalEl = document.getElementById('month-total');
+    if (!monthTotalEl) return;
+
+    const logs = JSON.parse(localStorage.getItem('workoutLogs') || '[]');
+    const targetMonthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+
+    const totalWeight = logs
+      .filter(log => log.date && log.date.startsWith(targetMonthPrefix))
+      .reduce((sum, log) => sum + (log.totalWeight || 0), 0);
+
+    monthTotalEl.innerHTML = `${totalWeight.toLocaleString()} kg`;
   }
 
   // nextボタンの有効化／グレーアウト切り替え
@@ -158,9 +198,10 @@
     createWeek();
     renderWeeks();
     toggleNextButton();
+    renderMonthTotalWeight();
   }
 
-  // イベントリスナーの設定
+  // イベントリスナー
   document.getElementById('prev')?.addEventListener('click', () => {
     month--;
     if (month < 0) {
@@ -199,7 +240,12 @@
 
   // ワークアウト開始ボタン
   document.getElementById('start-workout-btn')?.addEventListener('click', () => {
+    saveWorkoutDate(getTodayString());
     window.location.href = 'workout.html';
   });
 
- }
+  //トレーニング記録
+  const monthTotal = document.getElementById('month-total');
+  const monthCalories = document.getElementById('month-calories');
+
+}

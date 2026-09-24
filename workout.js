@@ -1,18 +1,20 @@
 'use strict';
 {
-  // ワークアウト
-
-  // 今日の日付
+  // 今日の日付を表示
   const today = new Date();
-  document.querySelector('#today').textContent = `${today.getMonth() + 1}月${today.getDate()}日`;
+  const todayEl = document.querySelector('#today');
+  if (todayEl) {
+    todayEl.textContent = `${today.getMonth() + 1}月${today.getDate()}日`;
+  }
 
-  let todos;
-
-  // ローカルストレージからの取得
-  if (localStorage.getItem('todos') === null) {
+  // ローカルストレージからの取得（安全対策込み）
+  let todos = [];
+  try {
+    const loaded = localStorage.getItem('todos');
+    todos = loaded ? JSON.parse(loaded) : [];
+    if (!Array.isArray(todos)) todos = [];
+  } catch (e) {
     todos = [];
-  } else {
-    todos = JSON.parse(localStorage.getItem('todos'));
   }
 
   // ローカルストレージへの保存
@@ -23,14 +25,14 @@
   const renderTodo = (todo) => {
     const li = document.createElement('li');
 
-    //  種目名（タイトル）
+    // 種目名（タイトル）
     const label = document.createElement('label');
     const title = document.createElement('h2');
     title.textContent = todo.title;
     label.appendChild(title);
     li.appendChild(label);
 
-    //  テーブル（セット一覧）
+    // テーブル（セット一覧）
     const table = document.createElement('table');
     const thead = document.createElement('thead');
     const tr = document.createElement('tr');
@@ -47,7 +49,7 @@
     // セット描画
     const renderSets = () => {
       tbody.innerHTML = '';
-      todo.sets.forEach((set, index) => {
+      (todo.sets || []).forEach((set, index) => {
         const row = document.createElement('tr');
 
         // セット番号
@@ -98,21 +100,21 @@
     table.appendChild(tbody);
     li.appendChild(table);
 
-    //  セット操作ボタン
+    // セット削除ボタン
     const deleteSetBtn = document.createElement('button');
     deleteSetBtn.textContent = 'ー セット削除';
     deleteSetBtn.addEventListener('click', () => {
-      if (todo.sets.length > 0) {
-        todo.sets.pop(); // 最後のセットを削除
+      if (todo.sets && todo.sets.length > 0) {
+        todo.sets.pop();
         saveTodos();
         renderSets();
       }
     });
 
+    // セット追加ボタン
     const addSetBtn = document.createElement('button');
     addSetBtn.textContent = '＋ セット追加';
     addSetBtn.addEventListener('click', () => {
-      // 最後のセットの値（kg, 回数）を引き継いで追加、なければ初期値(50kg, 10回)
       const lastSet = todo.sets[todo.sets.length - 1];
       const newWeight = lastSet ? lastSet.weight : 50;
       const newReps = lastSet ? lastSet.reps : 10;
@@ -122,7 +124,7 @@
       renderSets();
     });
 
-    //  種目自体の削除ボタン
+    // 種目削除ボタン
     const deleteTodoBtn = document.createElement('button');
     deleteTodoBtn.textContent = '× 種目を削除';
     deleteTodoBtn.style.marginLeft = '10px';
@@ -136,40 +138,85 @@
     li.appendChild(deleteSetBtn);
     li.appendChild(addSetBtn);
     li.appendChild(deleteTodoBtn);
+    
     document.querySelector('#todos').appendChild(li);
   };
 
+  // 一覧表示
   const renderTodos = () => {
+    const todoList = document.querySelector('#todos');
+    if (!todoList) return;
+    todoList.innerHTML = '';
     todos.forEach((todo) => {
       renderTodo(todo);
     });
   };
 
-  document.querySelector('#add-form').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const input = document.querySelector('#add-form input');
-    const todo = {
-      id: Date.now(),
-      title: input.value,
-      sets: [
-        { weight: 50, reps: 10, isCompleted: false }
-      ]
-    };
+  // フォーム追加処理
+  const addForm = document.querySelector('#add-form');
+  if (addForm) {
+    addForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const input = addForm.querySelector('input');
+      if (!input.value.trim()) return;
 
-    renderTodo(todo);
-    todos.push(todo);
-    saveTodos();
-    input.value = '';
-    input.focus();
-  });
+      const todo = {
+        id: Date.now(),
+        title: input.value,
+        sets: [
+          { weight: 50, reps: 10, isCompleted: false }
+        ]
+      };
 
-  saveTodos();
-  document.querySelectorAll('#todos li').forEach((li) => {
-    li.remove();
-  });
+      todos.push(todo);
+      saveTodos();
+      renderTodo(todo);
+
+      input.value = '';
+      input.focus();
+    });
+  }
+
+  // 初期描画のみ実行
   renderTodos();
 
+  // ワークアウト完了ボタン
+  document.getElementById('workout-complete')?.addEventListener('click', () => {
+    if (confirm('ワークアウトを完了しますか？')) {
+      // ★ エラーを修正して YYYY-MM-DD 形式で保存
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      const todayStr = `${year}-${month}-${day}`;
 
-  renderTodos();
+      //日付を保存
+      const dates = JSON.parse(localStorage.getItem('workoutDates') || '[]');
+      if (!dates.includes(todayStr)) {
+        dates.push(todayStr);
+        localStorage.setItem('workoutDates', JSON.stringify(dates));
+      }
 
+      //今日の総重量
+      let todayTotalWeight = 0;
+      todos.forEach(todo => {
+        (todo.sets || []).forEach(set => {
+          if (set.isCompleted) {
+            todayTotalWeight += (set.weight || 0) * (set.reps || 0);
+          }
+        });
+      });
+
+      const logs = JSON.parse(localStorage.getItem('workoutLogs') || '[]');
+      const existingIndex = logs.findIndex(log => log.date === todayStr);
+      if (existingIndex >= 0) {
+        logs[existingIndex].totalWeight = todayTotalWeight;
+      } else {
+        logs.push({ date: todayStr, totalWeight: todayTotalWeight });
+      }
+      localStorage.setItem('workoutLogs', JSON.stringify(logs));
+
+      window.location.href = 'index.html';
+    }
+  });
 }
