@@ -22,6 +22,7 @@
     localStorage.setItem('todos', JSON.stringify(todos));
   };
 
+  //種目カード
   const renderTodo = (todo) => {
     const li = document.createElement('li');
 
@@ -32,11 +33,14 @@
     label.appendChild(title);
     li.appendChild(label);
 
-    // テーブル（セット一覧）
+    // テーブル
     const table = document.createElement('table');
     const thead = document.createElement('thead');
     const tr = document.createElement('tr');
-    const theadTitles = ['セット', 'kg', '回', '完了'];
+    const isCardio = todo.type === 'cardio';
+    const theadTitles = isCardio
+      ? ['セット', 'km', '分', '完了']
+      : ['セット', 'kg', '回', '完了'];
     theadTitles.forEach((text) => {
       const td = document.createElement('td');
       td.textContent = text;
@@ -46,7 +50,7 @@
     table.appendChild(thead);
     const tbody = document.createElement('tbody');
 
-    // セット描画
+    // セット
     const renderSets = () => {
       tbody.innerHTML = '';
       (todo.sets || []).forEach((set, index) => {
@@ -56,24 +60,37 @@
         const tdSet = document.createElement('td');
         tdSet.textContent = index + 1;
 
-        // kg 入力
+        // km, kg入力
         const tdKg = document.createElement('td');
         const inputKg = document.createElement('input');
         inputKg.type = 'number';
+        inputKg.min = '0'; 
+        if (isCardio) inputKg.step = '0.1'; 
         inputKg.value = set.weight;
         inputKg.addEventListener('input', (e) => {
-          set.weight = Number(e.target.value);
+          let val = Number(e.target.value);
+          if (val < 0) {
+            val = 0;
+            e.target.value = 0; // 手入力でマイナスが入った場合も0にリセット
+          }
+          set.weight = val;
           saveTodos();
         });
         tdKg.appendChild(inputKg);
 
-        // 回数 入力
+        // 分, 回数入力
         const tdReps = document.createElement('td');
         const inputReps = document.createElement('input');
         inputReps.type = 'number';
+        inputReps.min = '0';
         inputReps.value = set.reps;
         inputReps.addEventListener('input', (e) => {
-          set.reps = Number(e.target.value);
+          let val = Number(e.target.value);
+          if (val < 0) {
+            val = 0;
+            e.target.value = 0;
+          }
+          set.reps = val;
           saveTodos();
         });
         tdReps.appendChild(inputReps);
@@ -116,10 +133,18 @@
     addSetBtn.textContent = '＋ セット追加';
     addSetBtn.addEventListener('click', () => {
       const lastSet = todo.sets[todo.sets.length - 1];
-      const newWeight = lastSet ? lastSet.weight : 50;
-      const newReps = lastSet ? lastSet.reps : 10;
+      const defaultVal1 = lastSet ? (lastSet.val1 ?? lastSet.weight ?? lastSet.distance) : (isCardio ? 3 : 50);
+      const defaultVal2 = lastSet ? (lastSet.val2 ?? lastSet.reps ?? lastSet.minutes) : (isCardio ? 20 : 10);
 
-      todo.sets.push({ weight: newWeight, reps: newReps, isCompleted: false });
+      todo.sets.push({
+        val1: defaultVal1,
+        val2: defaultVal2,
+        weight: defaultVal1,
+        reps: defaultVal2,
+        distance: defaultVal1,
+        minutes: defaultVal2,
+        isCompleted: false
+      });
       saveTodos();
       renderSets();
     });
@@ -133,12 +158,19 @@
       li.remove();
       todos = todos.filter((item) => item.id !== todo.id);
       saveTodos();
+
+      // 有酸素運動のカードが消された場合はチェックボックスの同期を取る
+      if (isCardio) {
+        const cardioCheckbox = document.querySelector('#cardio');
+        if (cardioCheckbox) cardioCheckbox.checked = false;
+      }
     });
+
 
     li.appendChild(deleteSetBtn);
     li.appendChild(addSetBtn);
     li.appendChild(deleteTodoBtn);
-    
+
     document.querySelector('#todos').appendChild(li);
   };
 
@@ -150,9 +182,15 @@
     todos.forEach((todo) => {
       renderTodo(todo);
     });
+
+    // 既に有酸素運動がリストにあればチェックボックスをONにする
+    const cardioCheckbox = document.querySelector('#cardio');
+    if (cardioCheckbox) {
+      cardioCheckbox.checked = todos.some((todo) => todo.type === 'cardio');
+    }
   };
 
-  // フォーム追加処理
+  // フォーム追加
   const addForm = document.querySelector('#add-form');
   if (addForm) {
     addForm.addEventListener('submit', (e) => {
@@ -162,9 +200,10 @@
 
       const todo = {
         id: Date.now(),
+        type: 'strength',
         title: input.value,
         sets: [
-          { weight: 50, reps: 10, isCompleted: false }
+          { val1: 50, val2: 10, weight: 50, reps: 10, isCompleted: false }
         ]
       };
 
@@ -177,13 +216,43 @@
     });
   }
 
-  // 初期描画のみ実行
+  // 有酸素運動のチェックボックス連動
+  const cardio = document.querySelector('#cardio');
+  if (cardio) {
+    cardio.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        // すでに有酸素運動のカードがなければ追加する
+        const exists = todos.some((todo) => todo.type === 'cardio');
+        if (!exists) {
+          const cardioTodo = {
+            id: Date.now(),
+            type: 'cardio',
+            title: '有酸素運動',
+            sets: [
+              { val1: 3, val2: 20, distance: 3, minutes: 20, isCompleted: false }
+            ]
+          };
+          todos.push(cardioTodo);
+          saveTodos();
+          renderTodo(cardioTodo);
+        }
+      } else {
+        // チェックを外したら有酸素運動のカードを削除する
+        const cardioTodo = todos.find((todo) => todo.type === 'cardio');
+        if (cardioTodo) {
+          todos = todos.filter((todo) => todo.type !== 'cardio');
+          saveTodos();
+          renderTodos();
+        }
+      }
+    });
+  }
+
   renderTodos();
 
   // ワークアウト完了ボタン
   document.getElementById('workout-complete')?.addEventListener('click', () => {
     if (confirm('ワークアウトを完了しますか？')) {
-      // ★ エラーを修正して YYYY-MM-DD 形式で保存
       const today = new Date();
       const year = today.getFullYear();
       const month = String(today.getMonth() + 1).padStart(2, '0');
