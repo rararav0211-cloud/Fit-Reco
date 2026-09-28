@@ -17,6 +17,31 @@
     todos = [];
   }
 
+  // 日付が変わっていたら、前回の入力内容・完了状態を初期化する
+  if (lastSavedDate && lastSavedDate !== todayStr) {
+    todos = todos.map(todo => {
+      const defaultVal1 = todo.type === 'cardio' ? 3 : 50;
+      const defaultVal2 = todo.type === 'cardio' ? 20 : 10;
+
+      return {
+        ...todo,
+        sets: [
+          {
+            val1: defaultVal1,
+            val2: defaultVal2,
+            weight: defaultVal1,
+            reps: defaultVal2,
+            distance: defaultVal1,
+            minutes: defaultVal2,
+            isCompleted: false
+          }
+        ]
+      };
+    });
+    localStorage.setItem('todos', JSON.stringify(todos));
+    localStorage.setItem('lastSavedDate', todayStr);
+  }
+
   // ローカルストレージへの保存
   const saveTodos = () => {
     localStorage.setItem('todos', JSON.stringify(todos));
@@ -322,6 +347,9 @@
       const month = String(today.getMonth() + 1).padStart(2, '0');
       const day = String(today.getDate()).padStart(2, '0');
       const todayStr = `${year}-${month}-${day}`;
+
+      // 最終保存日を記録
+      localStorage.setItem('lastSavedDate', todayStr);
 
       //日付を保存
       const dates = JSON.parse(localStorage.getItem('workoutDates') || '[]');

@@ -181,7 +181,8 @@ table {
   background-color: #ffffff;
   border-collapse: separate;
   border-spacing: 0;
-  border: 1px solid #eccc68;
+  border: 1px solid #eee;
+  padding: 16px;
   /* アクセントカラーの枠線 */
   border-radius: 16px;
   overflow: hidden;
