@@ -7,7 +7,7 @@
     todayEl.textContent = `${today.getMonth() + 1}月${today.getDate()}日`;
   }
 
-  // ローカルストレージからの取得（安全対策込み）
+  // ローカルストレージからの取得
   let todos = [];
   try {
     const loaded = localStorage.getItem('todos');
@@ -20,6 +20,75 @@
   // ローカルストレージへの保存
   const saveTodos = () => {
     localStorage.setItem('todos', JSON.stringify(todos));
+  };
+
+  // スピンボタン
+  const createStepperCell = (initialValue, stepLarge, stepSmall, unit, onChange) => {
+    const td = document.createElement('td');
+    const container = document.createElement('div');
+    container.className = 'stepper-container';
+
+    // 数値入力インプット
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.min = '0';
+    if (stepSmall < 1) input.step = String(stepSmall);
+    input.value = initialValue;
+    input.className = 'stepper-input';
+
+    // スピンボタンコンテナ
+    const buttonsContainer = document.createElement('div');
+    buttonsContainer.className = 'stepper-buttons';
+
+    // プラスボタン
+    const topRow = document.createElement('div');
+    topRow.className = 'stepper-row';
+
+    const btnPlusLarge = document.createElement('button');
+    btnPlusLarge.type = 'button';
+    btnPlusLarge.className = 'btn-step btn-step-large';
+    btnPlusLarge.textContent = `+${stepLarge}${unit}`;
+
+    topRow.appendChild(btnPlusLarge);
+
+    // マイナスボタン
+    const bottomRow = document.createElement('div');
+    bottomRow.className = 'stepper-row';
+
+    const btnMinusLarge = document.createElement('button');
+    btnMinusLarge.type = 'button';
+    btnMinusLarge.className = 'btn-step btn-step-large';
+    btnMinusLarge.textContent = `-${stepLarge}${unit}`;
+
+    bottomRow.appendChild(btnMinusLarge);
+
+    buttonsContainer.appendChild(topRow);
+    buttonsContainer.appendChild(bottomRow);
+
+    const updateVal = (newVal) => {
+      let val = Math.max(0, newVal);
+      val = Math.round(val * 10) / 10;
+      input.value = val;
+      onChange(val);
+    };
+
+    btnMinusLarge.addEventListener('click', () => updateVal(Number(input.value) - stepLarge));
+    btnPlusLarge.addEventListener('click', () => updateVal(Number(input.value) + stepLarge));
+
+    input.addEventListener('input', (e) => {
+      let val = Number(e.target.value);
+      if (val < 0 || isNaN(val)) {
+        val = 0;
+        e.target.value = 0;
+      }
+      onChange(val);
+    });
+
+    container.appendChild(input);
+    container.appendChild(buttonsContainer);
+
+    td.appendChild(container);
+    return td;
   };
 
   //種目カード
@@ -61,39 +130,34 @@
         tdSet.textContent = index + 1;
 
         // km, kg入力
-        const tdKg = document.createElement('td');
-        const inputKg = document.createElement('input');
-        inputKg.type = 'number';
-        inputKg.min = '0'; 
-        if (isCardio) inputKg.step = '0.1'; 
-        inputKg.value = set.weight;
-        inputKg.addEventListener('input', (e) => {
-          let val = Number(e.target.value);
-          if (val < 0) {
-            val = 0;
-            e.target.value = 0; // 手入力でマイナスが入った場合も0にリセット
+        const step1Large = isCardio ? 1 : 5;
+        const step1Small = isCardio ? 0.1 : 1;
+        const unit1 = isCardio ? 'km' : 'kg';
+        const val1 = set.weight ?? set.distance ?? (isCardio ? 3 : 50);
+        const tdVal1 = createStepperCell(val1, step1Large, step1Small, unit1, (newVal) => {
+          if (isCardio) {
+            set.distance = newVal;
+          } else {
+            set.weight = newVal;
           }
-          set.weight = val;
+          set.val1 = newVal;
           saveTodos();
         });
-        tdKg.appendChild(inputKg);
 
         // 分, 回数入力
-        const tdReps = document.createElement('td');
-        const inputReps = document.createElement('input');
-        inputReps.type = 'number';
-        inputReps.min = '0';
-        inputReps.value = set.reps;
-        inputReps.addEventListener('input', (e) => {
-          let val = Number(e.target.value);
-          if (val < 0) {
-            val = 0;
-            e.target.value = 0;
+        const step2Large = 5;
+        const step2Small = 1;
+        const val2 = set.reps ?? set.minutes ?? (isCardio ? 20 : 10);
+        const unit2 = isCardio ? '分' : '回';
+        const tdVal2 = createStepperCell(val2, step2Large, step2Small, unit2, (newVal) => {
+          if (isCardio) {
+            set.minutes = newVal;
+          } else {
+            set.reps = newVal;
           }
-          set.reps = val;
+          set.val2 = newVal;
           saveTodos();
         });
-        tdReps.appendChild(inputReps);
 
         // 完了チェックボックス
         const tdCompleted = document.createElement('td');
@@ -107,8 +171,8 @@
         tdCompleted.appendChild(inputCompleted);
 
         row.appendChild(tdSet);
-        row.appendChild(tdKg);
-        row.appendChild(tdReps);
+        row.appendChild(tdVal1);
+        row.appendChild(tdVal2);
         row.appendChild(tdCompleted);
         tbody.appendChild(row);
       });
@@ -269,11 +333,15 @@
       //今日の総重量
       let todayTotalWeight = 0;
       todos.forEach(todo => {
-        (todo.sets || []).forEach(set => {
-          if (set.isCompleted) {
-            todayTotalWeight += (set.weight || 0) * (set.reps || 0);
-          }
-        });
+        if (todo.type !== 'cardio') {
+          (todo.sets || []).forEach(set => {
+            if (set.isCompleted) {
+              const w = set.weight ?? set.val1 ?? 0;
+              const r = set.reps ?? set.val2 ?? 0;
+              todayTotalWeight += w * r;
+            }
+          });
+        }
       });
 
       const logs = JSON.parse(localStorage.getItem('workoutLogs') || '[]');
