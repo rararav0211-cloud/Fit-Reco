@@ -9,7 +9,6 @@
   let year = today.getFullYear();
   let month = today.getMonth();
 
-
   //ワークアウト開始ボタンを押した日付がローカルストレージに保存される
   function getWorkoutDates() {
     return JSON.parse(localStorage.getItem('workoutDates') || '[]');
@@ -33,13 +32,12 @@
     const n = new Date(year, month, 1).getDay();
 
     for (let i = 0; i < n; i++) {
-      dates.unshift({
-        date: d - i,
+      dates.push({
+        date: d - n + i + 1,
         isToday: false,
         isDisabled: true,
       });
     }
-
     return dates;
   }
 
@@ -157,18 +155,42 @@
   }
 
   //今月の総重量
-  function renderMonthTotalWeight() {
-    const monthTotalEl = document.getElementById('month-total');
-    if (!monthTotalEl) return;
-
+  function getMonthStats(y, m) {
     const logs = JSON.parse(localStorage.getItem('workoutLogs') || '[]');
-    const targetMonthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+    const prefix = `${y}-${String(m + 1).padStart(2, '0')}`;
+    return logs
+      .filter(log => log.date && log.date.startsWith(prefix))
+      .reduce((s, log) => ({
+        weight: s.weight + (log.totalWeight || 0),
+        distance: s.distance + (log.distance || 0),
+        minutes: s.minutes + (log.minutes || 0),
+      }), { weight: 0, distance: 0, minutes: 0 });
+  }
 
-    const totalWeight = logs
-      .filter(log => log.date && log.date.startsWith(targetMonthPrefix))
-      .reduce((sum, log) => sum + (log.totalWeight || 0), 0);
+  function diffText(cur, prev, unit) {
+    const d = Math.round((cur - prev) * 10) / 10;
+    return `${d > 0 ? '+' : ''}${d.toLocaleString()}${unit}`;
+  }
 
-    monthTotalEl.innerHTML = `${totalWeight.toLocaleString()} kg`;
+  function renderMonthStats() {
+    const cur = getMonthStats(year, month);
+    const prev = getMonthStats(month === 0 ? year - 1 : year, month === 0 ? 11 : month - 1);
+    const dist = Math.round(cur.distance * 10) / 10;
+
+    const total = document.getElementById('month-total');
+    if (total) total.innerHTML = `${cur.weight.toLocaleString()}<small>kg</small>`;
+    const running = document.getElementById('month-running');
+    if (running) running.innerHTML = `${dist}<small>km</small> ${cur.minutes}<small>分</small>`;
+
+    const totalDiff = document.getElementById('total-diff');
+    if (totalDiff) {
+      totalDiff.textContent = `前月比 ${diffText(cur.weight, prev.weight, 'kg')}`;
+    }
+    const runningDiff = document.getElementById('running-diff');
+    if (runningDiff) {
+      runningDiff.textContent =
+        `前月比 ${diffText(cur.distance, prev.distance, 'km')} ${diffText(cur.minutes, prev.minutes, '分')}`;
+    }
   }
 
   // nextボタンの有効化／グレーアウト切り替え
@@ -198,7 +220,8 @@
     createWeek();
     renderWeeks();
     toggleNextButton();
-    renderMonthTotalWeight();
+    renderMonthStats();
+    renderDailyLogs();
   }
 
   // イベントリスナー
@@ -248,4 +271,42 @@
   const monthTotal = document.getElementById('month-total');
   const monthCalories = document.getElementById('month-calories');
 
+  // 今月の表示されているログを日付ごとに一覧表示する関数
+  function renderDailyLogs() {
+    const container = document.getElementById('daily-logs-container');
+    if (!container) return;
+
+    const logs = JSON.parse(localStorage.getItem('workoutLogs') || '[]');
+    const targetMonthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+
+    // 表示中の月の日付ログをフィルタリングして昇順に並び替え
+    const currentMonthLogs = logs
+      .filter(log => log.date && log.date.startsWith(targetMonthPrefix))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    container.innerHTML = '';
+
+    if (currentMonthLogs.length === 0) {
+      container.innerHTML = 'この月のワークアウト記録はありません';
+      return;
+    }
+    const ul = document.createElement('ul');
+    ul.className = 'daily-log-list';
+
+    currentMonthLogs.forEach(log => {
+      // 日付の表示フォーマット（例: "2026-09-28" -> "9月28日"）
+      const [, m, d] = log.date.split('-');
+      const formattedDate = `${parseInt(m, 10)}月${parseInt(d, 10)}日`;
+
+      const li = document.createElement('li');
+      li.className = 'daily-log-item';
+      li.innerHTML = `
+    ${formattedDate}
+    総重量: ${(log.totalWeight || 0).toLocaleString()}kg
+  `;
+      ul.appendChild(li);
+    });
+
+    container.appendChild(ul);
+  }
 }

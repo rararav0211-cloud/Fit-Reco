@@ -6,6 +6,12 @@
   if (todayEl) {
     todayEl.textContent = `${today.getMonth() + 1}月${today.getDate()}日`;
   }
+  // 日付文字列の取得
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  const todayStr = `${year}-${month}-${day}`;
+  const lastSavedDate = localStorage.getItem('lastSavedDate');
 
   // ローカルストレージからの取得
   let todos = [];
@@ -358,26 +364,30 @@
         localStorage.setItem('workoutDates', JSON.stringify(dates));
       }
 
-      //今日の総重量
+      //今日の総重量・有酸素
       let todayTotalWeight = 0;
+      let todayDistance = 0;
+      let todayMinutes = 0;
       todos.forEach(todo => {
-        if (todo.type !== 'cardio') {
-          (todo.sets || []).forEach(set => {
-            if (set.isCompleted) {
-              const w = set.weight ?? set.val1 ?? 0;
-              const r = set.reps ?? set.val2 ?? 0;
-              todayTotalWeight += w * r;
-            }
-          });
-        }
+        (todo.sets || []).forEach(set => {
+          if (!set.isCompleted) return;
+          if (todo.type === 'cardio') {
+            todayDistance += set.distance ?? set.val1 ?? 0;
+            todayMinutes += set.minutes ?? set.val2 ?? 0;
+          } else {
+            todayTotalWeight += (set.weight ?? set.val1 ?? 0) * (set.reps ?? set.val2 ?? 0);
+          }
+        });
       });
+      todayDistance = Math.round(todayDistance * 10) / 10;
 
       const logs = JSON.parse(localStorage.getItem('workoutLogs') || '[]');
+      const entry = { date: todayStr, totalWeight: todayTotalWeight, distance: todayDistance, minutes: todayMinutes };
       const existingIndex = logs.findIndex(log => log.date === todayStr);
       if (existingIndex >= 0) {
-        logs[existingIndex].totalWeight = todayTotalWeight;
+        logs[existingIndex] = entry;
       } else {
-        logs.push({ date: todayStr, totalWeight: todayTotalWeight });
+        logs.push(entry);
       }
       localStorage.setItem('workoutLogs', JSON.stringify(logs));
 
