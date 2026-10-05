@@ -298,37 +298,23 @@
     });
   }
 
-  // 有酸素運動のチェックボックス連動
-  const cardio = document.querySelector('#cardio');
-  if (cardio) {
-    cardio.addEventListener('change', (e) => {
-      if (e.target.checked) {
-        // すでに有酸素運動のカードがなければ追加する
-        const exists = todos.some((todo) => todo.type === 'cardio');
-        if (!exists) {
-          const cardioTodo = {
-            id: Date.now(),
-            type: 'cardio',
-            title: '有酸素運動',
-            sets: [
-              { val1: 3, val2: 20, distance: 3, minutes: 20, isCompleted: false }
-            ]
-          };
-          todos.push(cardioTodo);
-          saveTodos();
-          renderTodo(cardioTodo);
-        }
-      } else {
-        // チェックを外したら有酸素運動のカードを削除する
-        const cardioTodo = todos.find((todo) => todo.type === 'cardio');
-        if (cardioTodo) {
-          todos = todos.filter((todo) => todo.type !== 'cardio');
-          saveTodos();
-          renderTodos();
-        }
-      }
-    });
-  }
+  // 有酸素運動追加ボタン
+  document.querySelector('#add-cardio-btn')?.addEventListener('click', () => {
+    const cardioTodo = {
+      id: Date.now(),
+      type: 'cardio',
+      title: '有酸素運動',
+      sets: [
+        { val1: 3, val2: 20, distance: 3, minutes: 20, isCompleted: false }
+      ]
+    };
+    todos.push(cardioTodo);
+    saveTodos();
+    renderTodo(cardioTodo);
+
+    // 追加したカードが見える位置までスクロール
+    document.querySelector('#todos').lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
 
   renderTodos();
 
