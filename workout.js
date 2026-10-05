@@ -25,33 +25,17 @@
 
   // 日付が変わっていたら、前回の入力内容・完了状態を初期化する
   if (lastSavedDate && lastSavedDate !== todayStr) {
-    todos = todos.map(todo => {
-      const defaultVal1 = todo.type === 'cardio' ? 3 : 50;
-      const defaultVal2 = todo.type === 'cardio' ? 20 : 10;
-
-      return {
-        ...todo,
-        sets: [
-          {
-            val1: defaultVal1,
-            val2: defaultVal2,
-            weight: defaultVal1,
-            reps: defaultVal2,
-            distance: defaultVal1,
-            minutes: defaultVal2,
-            isCompleted: false
-          }
-        ]
-      };
-    });
+    todos = [];
     localStorage.setItem('todos', JSON.stringify(todos));
-    localStorage.setItem('lastSavedDate', todayStr);
   }
 
   // ローカルストレージへの保存
   const saveTodos = () => {
     localStorage.setItem('todos', JSON.stringify(todos));
+    localStorage.setItem('lastSavedDate', todayStr);
   };
+
+  localStorage.setItem('lastSavedDate', todayStr);
 
   // スピンボタン
   const createStepperCell = (initialValue, stepLarge, stepSmall, unit, onChange) => {
@@ -78,7 +62,7 @@
     const btnPlusLarge = document.createElement('button');
     btnPlusLarge.type = 'button';
     btnPlusLarge.className = 'btn-step btn-step-large';
-    btnPlusLarge.textContent = `+${stepLarge}${unit}`;
+    btnPlusLarge.textContent = `+${stepLarge}`;
 
     topRow.appendChild(btnPlusLarge);
 
@@ -89,7 +73,7 @@
     const btnMinusLarge = document.createElement('button');
     btnMinusLarge.type = 'button';
     btnMinusLarge.className = 'btn-step btn-step-large';
-    btnMinusLarge.textContent = `-${stepLarge}${unit}`;
+    btnMinusLarge.textContent = `-${stepLarge}`;
 
     bottomRow.appendChild(btnMinusLarge);
 
@@ -262,9 +246,12 @@
     });
 
 
-    li.appendChild(deleteSetBtn);
-    li.appendChild(addSetBtn);
-    li.appendChild(deleteTodoBtn);
+    const cardActions = document.createElement('div');
+    cardActions.className = 'card-actions';
+    cardActions.appendChild(deleteSetBtn);
+    cardActions.appendChild(addSetBtn);
+    cardActions.appendChild(deleteTodoBtn);
+    li.appendChild(cardActions);
 
     document.querySelector('#todos').appendChild(li);
   };
@@ -382,7 +369,19 @@
       todayDistance = Math.round(todayDistance * 10) / 10;
 
       const logs = JSON.parse(localStorage.getItem('workoutLogs') || '[]');
-      const entry = { date: todayStr, totalWeight: todayTotalWeight, distance: todayDistance, minutes: todayMinutes };
+      const exercises = todos
+        .map(todo => ({
+          title: todo.title,
+          type: todo.type,
+          sets: (todo.sets || [])
+            .filter(set => set.isCompleted)
+            .map(set => todo.type === 'cardio'
+              ? { distance: set.distance ?? set.val1 ?? 0, minutes: set.minutes ?? set.val2 ?? 0 }
+              : { weight: set.weight ?? set.val1 ?? 0, reps: set.reps ?? set.val2 ?? 0 })
+        }))
+        .filter(ex => ex.sets.length > 0);
+
+      const entry = { date: todayStr, totalWeight: todayTotalWeight, distance: todayDistance, minutes: todayMinutes, exercises };
       const existingIndex = logs.findIndex(log => log.date === todayStr);
       if (existingIndex >= 0) {
         logs[existingIndex] = entry;

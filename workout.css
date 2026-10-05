@@ -105,10 +105,19 @@ li input[type="checkbox"] {
 /* カード内のアクションボタン（セット追加・削除・種目削除） */
 .card-actions {
   display: flex;
+  flex-wrap: nowrap;
   justify-content: space-between;
   align-items: center;
   gap: 8px;
   margin-top: 12px;
+}
+
+.card-actions button {
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0;
+  padding: 8px 4px;
+  white-space: nowrap;
 }
 
 li button {

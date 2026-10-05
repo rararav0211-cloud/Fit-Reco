@@ -263,13 +263,52 @@
 
   // ワークアウト開始ボタン
   document.getElementById('start-workout-btn')?.addEventListener('click', () => {
-    saveWorkoutDate(getTodayString());
     window.location.href = 'workout.html';
   });
 
   //トレーニング記録
   const monthTotal = document.getElementById('month-total');
   const monthCalories = document.getElementById('month-calories');
+
+  // その日のワークアウト詳細を組み立てる
+  function buildLogDetail(log) {
+    const wrap = document.createElement('div');
+    const exercises = log.exercises || [];
+
+    // 詳細を保存する前の古い記録は合計値のみ表示
+    if (exercises.length === 0) {
+      const p = document.createElement('p');
+      p.className = 'no-log-msg';
+      p.textContent = log.distance
+        ? `有酸素 ${log.distance}km / ${log.minutes || 0}分`
+        : '種目の詳細は記録されていません';
+      wrap.appendChild(p);
+      return wrap;
+    }
+
+    exercises.forEach(ex => {
+      const block = document.createElement('div');
+      block.className = 'detail-exercise';
+
+      const title = document.createElement('div');
+      title.className = 'detail-exercise-title';
+      title.textContent = ex.title;
+      block.appendChild(title);
+
+      const ol = document.createElement('ol');
+      ol.className = 'detail-set-list';
+      ex.sets.forEach(set => {
+        const item = document.createElement('li');
+        item.textContent = ex.type === 'cardio'
+          ? `${set.distance}km / ${set.minutes}分`
+          : `${set.weight}kg × ${set.reps}回`;
+        ol.appendChild(item);
+      });
+      block.appendChild(ol);
+      wrap.appendChild(block);
+    });
+    return wrap;
+  }
 
   // 今月の表示されているログを日付ごとに一覧表示する関数
   function renderDailyLogs() {
@@ -300,10 +339,37 @@
 
       const li = document.createElement('li');
       li.className = 'daily-log-item';
-      li.innerHTML = `
-    ${formattedDate}
-    総重量: ${(log.totalWeight || 0).toLocaleString()}kg
-  `;
+      const header = document.createElement('div');
+      header.className = 'daily-log-header';
+      header.innerHTML = `
+        <span class="daily-log-date">${formattedDate}</span>
+        <span class="daily-log-weight">総重量: <strong>${(log.totalWeight || 0).toLocaleString()}</strong>kg</span>
+      `;
+
+      const toggleBtn = document.createElement('button');
+      toggleBtn.type = 'button';
+      toggleBtn.className = 'daily-log-toggle';
+      toggleBtn.textContent = '+';
+      toggleBtn.setAttribute('aria-label', `${formattedDate}のワークアウト詳細を開く`);
+      toggleBtn.setAttribute('aria-expanded', 'false');
+      header.appendChild(toggleBtn);
+
+      // 詳細エリア（初期は非表示）
+      const detail = document.createElement('div');
+      detail.className = 'daily-log-detail';
+      detail.hidden = true;
+      detail.appendChild(buildLogDetail(log));
+
+      toggleBtn.addEventListener('click', () => {
+        const open = detail.hidden;
+        detail.hidden = !open;
+        li.classList.toggle('open', open);
+        toggleBtn.setAttribute('aria-expanded', String(open));
+        toggleBtn.setAttribute('aria-label', `${formattedDate}のワークアウト詳細を${open ? '閉じる' : '開く'}`);
+      });
+
+      li.appendChild(header);
+      li.appendChild(detail);
       ul.appendChild(li);
     });
 
