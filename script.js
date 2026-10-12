@@ -210,8 +210,30 @@
     }
   }
 
+  // カレンダーの日付タップ → その日の記録カードまでスクロールして開く
   function handleDateClick(formattedDate) {
-    console.log(`選択された日付: ${formattedDate}`);
+    const item = document.querySelector(`.daily-log-item[data-date="${formattedDate}"]`);
+    if (!item) return; // 記録がない日は何もしない
+
+    setLogOpen(item, true);
+    item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    // どのカードが開いたか分かるように一瞬ハイライト
+    item.classList.remove('highlight');
+    void item.offsetWidth; // アニメーションを再スタートさせるため
+    item.classList.add('highlight');
+  }
+
+  // 記録カードの開閉
+  function setLogOpen(item, open) {
+    const detail = item.querySelector('.daily-log-detail');
+    const toggleBtn = item.querySelector('.daily-log-toggle');
+    if (!detail || !toggleBtn) return;
+
+    detail.hidden = !open;
+    item.classList.toggle('open', open);
+    toggleBtn.setAttribute('aria-expanded', String(open));
+    toggleBtn.setAttribute('aria-label', `${item.dataset.label}のワークアウト詳細を${open ? '閉じる' : '開く'}`);
   }
 
   function createCalendar() {
@@ -339,6 +361,8 @@
 
       const li = document.createElement('li');
       li.className = 'daily-log-item';
+      li.dataset.date = log.date;
+      li.dataset.label = formattedDate;
       const header = document.createElement('div');
       header.className = 'daily-log-header';
       header.innerHTML = `
@@ -361,11 +385,7 @@
       detail.appendChild(buildLogDetail(log));
 
       toggleBtn.addEventListener('click', () => {
-        const open = detail.hidden;
-        detail.hidden = !open;
-        li.classList.toggle('open', open);
-        toggleBtn.setAttribute('aria-expanded', String(open));
-        toggleBtn.setAttribute('aria-label', `${formattedDate}のワークアウト詳細を${open ? '閉じる' : '開く'}`);
+        setLogOpen(li, detail.hidden);
       });
 
       li.appendChild(header);
