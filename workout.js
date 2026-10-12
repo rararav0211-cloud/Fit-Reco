@@ -237,12 +237,6 @@
       li.remove();
       todos = todos.filter((item) => item.id !== todo.id);
       saveTodos();
-
-      // 有酸素運動のカードが消された場合はチェックボックスの同期を取る
-      if (isCardio) {
-        const cardioCheckbox = document.querySelector('#cardio');
-        if (cardioCheckbox) cardioCheckbox.checked = false;
-      }
     });
 
 
@@ -264,59 +258,66 @@
     todos.forEach((todo) => {
       renderTodo(todo);
     });
-
-    // 既に有酸素運動がリストにあればチェックボックスをONにする
-    const cardioCheckbox = document.querySelector('#cardio');
-    if (cardioCheckbox) {
-      cardioCheckbox.checked = todos.some((todo) => todo.type === 'cardio');
-    }
   };
 
-  // フォーム追加
-  const addForm = document.querySelector('#add-form');
-  if (addForm) {
-    addForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const input = addForm.querySelector('input');
-      if (!input.value.trim()) return;
+    // ===== 種目の追加 =====
+ 
+  const CARDIO_CATEGORY = '有酸素';
+ 
+  // 同時に複数追加してもIDが重ならないようにする
+  let idSeed = Date.now();
+  const nextId = () => ++idSeed;
 
-      const todo = {
-        id: Date.now(),
-        type: 'strength',
-        title: input.value,
-        sets: [
-          { val1: 50, val2: 10, weight: 50, reps: 10, isCompleted: false }
-        ]
-      };
-
-      todos.push(todo);
-      saveTodos();
-      renderTodo(todo);
-
-      input.value = '';
-      input.focus();
-    });
-  }
-
-  // 有酸素運動追加ボタン
-  document.querySelector('#add-cardio-btn')?.addEventListener('click', () => {
-    const cardioTodo = {
-      id: Date.now(),
-      type: 'cardio',
-      title: '有酸素運動',
+  // 種目選択画面で選んだ種目を、今日のワークアウトのカードにする
+  const createTodo = (exercise) => {
+    const isCardio = exercise.category === CARDIO_CATEGORY;
+    const weight = exercise.bw ? 0 : 50;
+    return {
+      id: nextId(),
+      type: isCardio ? 'cardio' : 'strength',
+      title: exercise.name,
       sets: [
-        { val1: 3, val2: 20, distance: 3, minutes: 20, isCompleted: false }
+        isCardio
+          ? { val1: 3, val2: 20, distance: 3, minutes: 20, isCompleted: false }
+          : { val1: weight, val2: 10, weight: weight, reps: 10, isCompleted: false }
       ]
     };
-    todos.push(cardioTodo);
-    saveTodos();
-    renderTodo(cardioTodo);
+  };
 
-    // 追加したカードが見える位置までスクロール
-    document.querySelector('#todos').lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+   // 種目選択画面から渡された種目を受け取る
+  const applyPendingExercises = () => {
+    let pending = [];
+    try {
+      pending = JSON.parse(sessionStorage.getItem('pendingExercises') || '[]');
+    } catch (e) {
+      pending = [];
+    }
+    sessionStorage.removeItem('pendingExercises');
+    if (!Array.isArray(pending) || pending.length === 0) return;
+ 
+    const firstNewIndex = todos.length;
+    pending.forEach((exercise) => {
+      const todo = createTodo(exercise);
+      todos.push(todo);
+      renderTodo(todo);
+    });
+    saveTodos();
+
+    // 追加した最初のカードまでスクロール
+    document.querySelectorAll('#todos > li')[firstNewIndex]
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  // 種目追加ボタン
+  document.querySelector('#add-btn')?.addEventListener('click', () => {
+    sessionStorage.setItem('fromWorkout', '1');
+    window.location.href = 'exercises.html';
   });
 
   renderTodos();
+
+  // 初めて開いたとき・種目選択画面から戻ってきたとき
+  window.addEventListener('pageshow', applyPendingExercises);
 
   // ワークアウト完了ボタン
   document.getElementById('workout-complete')?.addEventListener('click', () => {

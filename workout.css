@@ -171,13 +171,13 @@ form button {
 }
 
 
-/* ボタンを押した時のぷにっとした動き */
+/* ボタンを押した時の動き */
 .workout-button:active {
   transform: scale(0.98);
   box-shadow: 0 2px 6px rgba(30, 144, 255, 0.2);
 }
 
-/* ブラウザ標準のスピンボタン矢印を非表示にする */
+/* ブラウザ標準のスピンボタンを非表示にする */
 li table input[type="number"]::-webkit-outer-spin-button,
 li table input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -241,4 +241,21 @@ li table input[type="number"] {
 
 .btn-step-small {
   color: #555;
+}
+
+/* ===== 種目追加 ===== */
+ 
+.empty-msg[hidden] {
+  display: none;
+}
+ 
+.add-exercise-btn:active {
+  background: #f0f7ff;
+}
+
+#add-btn {
+  flex: 1;
+  padding: 14px;
+  font-size: 16px;
+  border-radius: 12px;
 }
