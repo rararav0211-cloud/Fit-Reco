@@ -35,6 +35,77 @@
     localStorage.setItem('lastSavedDate', todayStr);
   };
 
+  // ===== 消費カロリー =====
+  // 計算式：消費カロリー(kcal) = METs × 体重(kg) × 時間(h) × 1.05
+
+  const STRENGTH_METS = 5.0;      // 筋トレ（中〜高強度）
+  const MINUTES_PER_SET = 2;      // 筋トレ1セットにかかる時間（休憩込み）の目安
+
+  // 有酸素運動の種目ごとのMETs（リストにない種目は DEFAULT_CARDIO_METS）
+  const CARDIO_METS = {
+    'ウォーキング': 3.5,
+    'エアロバイク': 6.8,
+    'クロストレーナー': 5.0,
+  };
+  const DEFAULT_CARDIO_METS = 5.0;
+
+  // 体重（未入力のときは 0）
+  const getBodyWeight = () => {
+    const w = Number(localStorage.getItem('bodyWeight'));
+    return w > 0 ? w : 0;
+  };
+
+  // 有酸素運動のMETs（ランニングは速度から求める：時速8km → 約8METs）
+  const getCardioMets = (title, distance, minutes) => {
+    if (title === 'ランニング') {
+      const speed = minutes > 0 ? distance / (minutes / 60) : 0; // km/h
+      return Math.min(Math.max(speed, 6), 16);
+    }
+    return CARDIO_METS[title] ?? DEFAULT_CARDIO_METS;
+  };
+
+  // 完了したセットから今日の消費カロリーを計算（体重が未入力なら 0）
+  const calcCalories = () => {
+    const weight = getBodyWeight();
+    if (weight === 0) return 0;
+    let kcal = 0;
+    todos.forEach((todo) => {
+      (todo.sets || []).forEach((set) => {
+        if (!set.isCompleted) return;
+        if (todo.type === 'cardio') {
+          const distance = set.distance ?? set.val1 ?? 0;
+          const minutes = set.minutes ?? set.val2 ?? 0;
+          kcal += getCardioMets(todo.title, distance, minutes) * weight * (minutes / 60) * 1.05;
+        } else {
+          kcal += STRENGTH_METS * weight * (MINUTES_PER_SET / 60) * 1.05;
+        }
+      });
+    });
+    return Math.round(kcal);
+  };
+
+  // 体重が未入力なら案内を出す
+  const updateWeightMsg = () => {
+    const msg = document.querySelector('#weight-msg');
+    if (msg) msg.hidden = getBodyWeight() > 0;
+  };
+
+  // 体重の入力欄
+  const bodyWeightInput = document.querySelector('#body-weight');
+  if (bodyWeightInput) {
+    const saved = Number(localStorage.getItem('bodyWeight'));
+    bodyWeightInput.value = saved > 0 ? saved : '';
+    bodyWeightInput.addEventListener('input', () => {
+      const w = Number(bodyWeightInput.value);
+      if (w > 0) {
+        localStorage.setItem('bodyWeight', String(w));
+      } else {
+        localStorage.removeItem('bodyWeight');
+      }
+      updateCalorieDisplay();
+    });
+  }
+
   localStorage.setItem('lastSavedDate', todayStr);
 
   // スピンボタン
@@ -260,10 +331,10 @@
     });
   };
 
-    // ===== 種目の追加 =====
- 
+  // ===== 種目の追加 =====
+
   const CARDIO_CATEGORY = '有酸素';
- 
+
   // 同時に複数追加してもIDが重ならないようにする
   let idSeed = Date.now();
   const nextId = () => ++idSeed;
@@ -284,7 +355,7 @@
     };
   };
 
-   // 種目選択画面から渡された種目を受け取る
+  // 種目選択画面から渡された種目を受け取る
   const applyPendingExercises = () => {
     let pending = [];
     try {
@@ -294,7 +365,7 @@
     }
     sessionStorage.removeItem('pendingExercises');
     if (!Array.isArray(pending) || pending.length === 0) return;
- 
+
     const firstNewIndex = todos.length;
     pending.forEach((exercise) => {
       const todo = createTodo(exercise);
@@ -319,65 +390,120 @@
   // 初めて開いたとき・種目選択画面から戻ってきたとき
   window.addEventListener('pageshow', applyPendingExercises);
 
+  // ===== 今日のワークアウトのまとめカード =====
+  const summaryDialog = document.querySelector('#summary-dialog');
+
+  const showSummary = (entry) => {
+    if (!summaryDialog) {
+      window.location.href = 'index.html';
+      return;
+    }
+
+    document.querySelector('#summary-date').textContent =
+      `${today.getMonth() + 1}月${today.getDate()}日のワークアウト`;
+    document.querySelector('#summary-weight').textContent = entry.totalWeight.toLocaleString();
+    document.querySelector('#summary-distance').textContent = entry.distance;
+    document.querySelector('#summary-minutes').textContent = entry.minutes;
+    document.querySelector('#summary-calories').textContent = entry.calories.toLocaleString();
+
+    // 体重が未入力ならカロリーは 0 のまま案内を出す
+    document.querySelector('#summary-weight-msg').hidden = getBodyWeight() > 0;
+
+    // やった種目の一覧
+    const list = document.querySelector('#summary-exercises');
+    list.innerHTML = '';
+    if (entry.exercises.length === 0) {
+      const li = document.createElement('li');
+      li.className = 'summary-empty';
+      li.textContent = '完了したセットはありません';
+      list.appendChild(li);
+    }
+    entry.exercises.forEach((ex) => {
+      const li = document.createElement('li');
+      const name = document.createElement('span');
+      name.textContent = ex.title;
+      const sets = document.createElement('span');
+      sets.className = 'summary-sets';
+      sets.textContent = `${ex.sets.length}セット`;
+      li.appendChild(name);
+      li.appendChild(sets);
+      list.appendChild(li);
+    });
+
+    summaryDialog.showModal();
+  };
+
+  // まとめカードの「ホームへ戻る」
+  document.querySelector('#summary-home-btn')?.addEventListener('click', () => {
+    window.location.href = 'index.html';
+  });
+
+  // Escキーでまとめカードが閉じないようにする（記録は保存済みなのでホームへ）
+  summaryDialog?.addEventListener('cancel', (e) => {
+    e.preventDefault();
+  });
+
   // ワークアウト完了ボタン
   document.getElementById('workout-complete')?.addEventListener('click', () => {
-    if (confirm('ワークアウトを完了しますか？')) {
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = String(today.getMonth() + 1).padStart(2, '0');
-      const day = String(today.getDate()).padStart(2, '0');
-      const todayStr = `${year}-${month}-${day}`;
+    if (!confirm('ワークアウトを完了しますか？')) return;
 
-      // 最終保存日を記録
-      localStorage.setItem('lastSavedDate', todayStr);
+    // 最終保存日を記録
+    localStorage.setItem('lastSavedDate', todayStr);
 
-      //日付を保存
-      const dates = JSON.parse(localStorage.getItem('workoutDates') || '[]');
-      if (!dates.includes(todayStr)) {
-        dates.push(todayStr);
-        localStorage.setItem('workoutDates', JSON.stringify(dates));
-      }
-
-      //今日の総重量・有酸素
-      let todayTotalWeight = 0;
-      let todayDistance = 0;
-      let todayMinutes = 0;
-      todos.forEach(todo => {
-        (todo.sets || []).forEach(set => {
-          if (!set.isCompleted) return;
-          if (todo.type === 'cardio') {
-            todayDistance += set.distance ?? set.val1 ?? 0;
-            todayMinutes += set.minutes ?? set.val2 ?? 0;
-          } else {
-            todayTotalWeight += (set.weight ?? set.val1 ?? 0) * (set.reps ?? set.val2 ?? 0);
-          }
-        });
-      });
-      todayDistance = Math.round(todayDistance * 10) / 10;
-
-      const logs = JSON.parse(localStorage.getItem('workoutLogs') || '[]');
-      const exercises = todos
-        .map(todo => ({
-          title: todo.title,
-          type: todo.type,
-          sets: (todo.sets || [])
-            .filter(set => set.isCompleted)
-            .map(set => todo.type === 'cardio'
-              ? { distance: set.distance ?? set.val1 ?? 0, minutes: set.minutes ?? set.val2 ?? 0 }
-              : { weight: set.weight ?? set.val1 ?? 0, reps: set.reps ?? set.val2 ?? 0 })
-        }))
-        .filter(ex => ex.sets.length > 0);
-
-      const entry = { date: todayStr, totalWeight: todayTotalWeight, distance: todayDistance, minutes: todayMinutes, exercises };
-      const existingIndex = logs.findIndex(log => log.date === todayStr);
-      if (existingIndex >= 0) {
-        logs[existingIndex] = entry;
-      } else {
-        logs.push(entry);
-      }
-      localStorage.setItem('workoutLogs', JSON.stringify(logs));
-
-      window.location.href = 'index.html';
+    // 日付を保存
+    const dates = JSON.parse(localStorage.getItem('workoutDates') || '[]');
+    if (!dates.includes(todayStr)) {
+      dates.push(todayStr);
+      localStorage.setItem('workoutDates', JSON.stringify(dates));
     }
+
+    //今日の総重量・有酸素
+    let todayTotalWeight = 0;
+    let todayDistance = 0;
+    let todayMinutes = 0;
+    todos.forEach(todo => {
+      (todo.sets || []).forEach(set => {
+        if (!set.isCompleted) return;
+        if (todo.type === 'cardio') {
+          todayDistance += set.distance ?? set.val1 ?? 0;
+          todayMinutes += set.minutes ?? set.val2 ?? 0;
+        } else {
+          todayTotalWeight += (set.weight ?? set.val1 ?? 0) * (set.reps ?? set.val2 ?? 0);
+        }
+      });
+    });
+    todayDistance = Math.round(todayDistance * 10) / 10;
+
+    const logs = JSON.parse(localStorage.getItem('workoutLogs') || '[]');
+    const exercises = todos
+      .map(todo => ({
+        title: todo.title,
+        type: todo.type,
+        sets: (todo.sets || [])
+          .filter(set => set.isCompleted)
+          .map(set => todo.type === 'cardio'
+            ? { distance: set.distance ?? set.val1 ?? 0, minutes: set.minutes ?? set.val2 ?? 0 }
+            : { weight: set.weight ?? set.val1 ?? 0, reps: set.reps ?? set.val2 ?? 0 })
+      }))
+      .filter(ex => ex.sets.length > 0);
+
+   const entry = {
+      date: todayStr,
+      totalWeight: todayTotalWeight,
+      distance: todayDistance,
+      minutes: todayMinutes,
+      calories: calcCalories(),
+      exercises
+    };
+    const existingIndex = logs.findIndex(log => log.date === todayStr);
+    if (existingIndex >= 0) {
+      logs[existingIndex] = entry;
+    } else {
+      logs.push(entry);
+    }
+    localStorage.setItem('workoutLogs', JSON.stringify(logs));
+
+    // まとめカードを表示
+    showSummary(entry);
   });
 }

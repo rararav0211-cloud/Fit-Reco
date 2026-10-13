@@ -9,21 +9,9 @@
   let year = today.getFullYear();
   let month = today.getMonth();
 
-  //ワークアウト開始ボタンを押した日付がローカルストレージに保存される
+  //ワークアウトをした日を保存
   function getWorkoutDates() {
     return JSON.parse(localStorage.getItem('workoutDates') || '[]');
-  }
-
-  function getTodayString() {
-    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-  }
-
-  function saveWorkoutDate(dateString) {
-    const dates = getWorkoutDates();
-    if (!dates.includes(dateString)) {
-      dates.push(dateString);
-      localStorage.setItem('workoutDates', JSON.stringify(dates));
-    }
   }
 
   function getCalendarHead() {
@@ -154,7 +142,7 @@
     });
   }
 
-  //今月の総重量
+  // 月ごとの合計（総重量・有酸素・消費カロリー）
   function getMonthStats(y, m) {
     const logs = JSON.parse(localStorage.getItem('workoutLogs') || '[]');
     const prefix = `${y}-${String(m + 1).padStart(2, '0')}`;
@@ -164,9 +152,10 @@
         weight: s.weight + (log.totalWeight || 0),
         distance: s.distance + (log.distance || 0),
         minutes: s.minutes + (log.minutes || 0),
-      }), { weight: 0, distance: 0, minutes: 0 });
+        calories: s.calories + (log.calories || 0),
+      }), { weight: 0, distance: 0, minutes: 0, calories: 0 });
   }
-
+ 
   function diffText(cur, prev, unit) {
     const d = Math.round((cur - prev) * 10) / 10;
     return `${d > 0 ? '+' : ''}${d.toLocaleString()}${unit}`;
@@ -176,11 +165,18 @@
     const cur = getMonthStats(year, month);
     const prev = getMonthStats(month === 0 ? year - 1 : year, month === 0 ? 11 : month - 1);
     const dist = Math.round(cur.distance * 10) / 10;
-
+ 
     const total = document.getElementById('month-total');
     if (total) total.innerHTML = `${cur.weight.toLocaleString()}<small>kg</small>`;
     const running = document.getElementById('month-running');
     if (running) running.innerHTML = `${dist}<small>km</small> ${cur.minutes}<small>分</small>`;
+ 
+    const calories = document.getElementById('month-calories');
+    if (calories) calories.innerHTML = `${cur.calories.toLocaleString()}<small>kcal</small>`;
+    const caloriesDiff = document.getElementById('calories-diff');
+    if (caloriesDiff) {
+      caloriesDiff.textContent = `前月比 ${diffText(cur.calories, prev.calories, 'kcal')}`;
+    }
 
     const totalDiff = document.getElementById('total-diff');
     if (totalDiff) {
@@ -198,7 +194,7 @@
     const nextBtn = document.getElementById('next');
     if (!nextBtn) return;
 
-    // 表示中の年月が「今月」または「未来」の場合はグレーアウト
+    // 表示中の年月が「今月」または今日以降の場合はグレーアウト
     const isCurrentOrFutureMonth =
       year > today.getFullYear() ||
       (year === today.getFullYear() && month >= today.getMonth());
@@ -297,6 +293,14 @@
     const wrap = document.createElement('div');
     const exercises = log.exercises || [];
 
+    // 消費カロリー（カロリー機能を入れる前の記録や、体重未入力の日は表示しない）
+    if (log.calories) {
+      const kcal = document.createElement('p');
+      kcal.className = 'detail-calories';
+      kcal.textContent = `消費カロリー 約${log.calories.toLocaleString()}kcal`;
+      wrap.appendChild(kcal);
+    }
+
     // 詳細を保存する前の古い記録は合計値のみ表示
     if (exercises.length === 0) {
       const p = document.createElement('p');
@@ -332,7 +336,7 @@
     return wrap;
   }
 
-  // 今月の表示されているログを日付ごとに一覧表示する関数
+  // 今月の表示されているログを日付ごとに一覧表示
   function renderDailyLogs() {
     const container = document.getElementById('daily-logs-container');
     if (!container) return;

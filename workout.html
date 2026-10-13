@@ -15,6 +15,15 @@
   </header>
   <div class="container">
     <h1 id="today"></h1>
+    <div class="calorie-bar">
+      <label class="body-weight">
+        体重
+        <input type="number" id="body-weight" min="20" max="200" step="0.1" inputmode="decimal">
+        kg
+      </label>
+      <span class="body-weight-note">消費カロリーの計算に使います</span>
+    </div>
+    <p id="weight-msg" class="weight-msg" hidden>体重を入力してください。</p>
     <ul id="todos">
     </ul>
     <form>
@@ -22,6 +31,32 @@
     </form>
     <button id="workout-complete" class="workout-button">ワークアウト完了</button>
   </div>
+  <!-- ワークアウト完了後のまとめカード -->
+  <dialog id="summary-dialog" class="summary">
+    <p class="summary-title">お疲れさまでした！</p>
+    <p id="summary-date" class="summary-date"></p>
+ 
+    <div class="summary-stats">
+      <div class="summary-stat">
+        <span class="summary-label">総重量</span>
+        <span class="summary-value"><strong id="summary-weight">0</strong>kg</span>
+      </div>
+      <div class="summary-stat">
+        <span class="summary-label">有酸素運動</span>
+        <span class="summary-value"><strong id="summary-distance">0</strong>km <strong id="summary-minutes">0</strong>分</span>
+      </div>
+      <div class="summary-stat summary-stat-calories">
+        <span class="summary-label">消費カロリー</span>
+        <span class="summary-value">約<strong id="summary-calories">0</strong>kcal</span>
+        <span id="summary-weight-msg" class="weight-msg" hidden>体重を入力してください。</span>
+      </div>
+    </div>
+ 
+    <p class="summary-subtitle">今日やった種目</p>
+    <ul id="summary-exercises" class="summary-exercises"></ul>
+    <button type="button" id="summary-home-btn" class="workout-button">ホームへ戻る</button>
+  </dialog>
+  
   <script src="workout.js"></script>
 </body>
 </html>

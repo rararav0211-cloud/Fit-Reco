@@ -18,7 +18,7 @@
       <button class="workout-button" id="start-workout-btn">ワークアウトを開始</button>
     </section>
 
-    <!-- モチベーション・成果カードエリア -->
+    <!-- 成果カード-->
     <h3>トレーニング記録</h3>
     <div class="record-header">
       <p id="title"></p>
@@ -29,6 +29,11 @@
     </div>
 
     <section class="stats-summary">
+      <div class="stat-card stat-card-wide">
+        <span class="stat-label">今月の消費カロリー</span>
+        <span class="stat-value stat-calories" id="month-calories"><small>kcal</small></span>
+        <span class="stat-label" id="calories-diff">前月比</span>
+      </div>
       <div class="stat-card">
         <span class="stat-label">今月の総重量</span>
         <span class="stat-value" id="month-total"><small>kg</small></span>
@@ -37,11 +42,11 @@
       <div class="stat-card">
         <span class="stat-label">有酸素運動</span>
         <span class="stat-value" id="month-running"><small>km</small><small>分</small></span>
-      <span class="stat-label" id="running-diff">前月比</span>
+        <span class="stat-label" id="running-diff">前月比</span>
       </div>
     </section>
 
-    <!-- カレンダーエリア -->
+    <!-- カレンダー -->
     <section class="calendar-section">
       <table>
         <thead>
