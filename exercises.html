@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ワークアウト</title>
+  <link rel="stylesheet" href="workout.css">
+  <link rel="stylesheet" href="exercises.css">
+</head>
+<body class="exercises-page">
+  <header>
+    <a href="workout.html" id="back-link" aria-label="ワークアウトに戻る">&lt; </a>
+    <h1>種目を選ぶ</h1>
+  </header>
+ 
+  <div id="category-tabs" class="category-tabs" role="tablist"></div>
+ 
+  <div class="container exercises-container">
+    <ul id="exercise-list" class="exercise-list"></ul>
+ 
+    <form id="custom-form" class="custom-form">
+      <p class="custom-form-title">リストにない種目を追加</p>
+      <div class="custom-form-row">
+        <input type="text" id="custom-name" placeholder="種目名（例：ケーブルクロス）">
+        <select id="custom-category"></select>
+      </div>
+      <button type="submit">リストに追加</button>
+    </form>
+  </div>
+ 
+  <!-- 画面下に固定の追加ボタン -->
+  <div class="add-bar">
+    <button type="button" id="add-selected-btn" class="workout-button" disabled>種目を選んでください</button>
+  </div>
+ 
+  <script src="exercises.js"></script>
+</body>
+</html>

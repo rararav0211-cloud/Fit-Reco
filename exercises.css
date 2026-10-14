@@ -1,0 +1,200 @@
+@charset 'UTF-8';
+
+/* 部位タブ（ヘッダーの下に固定・横スクロール） */
+.category-tabs {
+  position: sticky;
+  top: 48px;
+  z-index: 9;
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  overflow-x: auto;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+}
+ 
+.category-tab {
+  flex-shrink: 0;
+  padding: 6px 16px;
+  font-size: 14px;
+  border: 1px solid #ddd;
+  border-radius: 999px;
+  background: #fff;
+  color: #555;
+  cursor: pointer;
+}
+
+.category-tab[aria-selected="true"] {
+  background: #1e90ff;
+  border-color: #1e90ff;
+  color: #fff;
+  font-weight: bold;
+}
+ 
+/* 下の固定ボタンに隠れないよう余白をとる */
+.exercises-container {
+  padding-bottom: 110px;
+}
+ 
+/* 種目一覧 */
+.exercise-list {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.exercise-list li.exercise-item {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0 12px 0 0;
+  border: none;
+  border-bottom: 1px solid #f1f2f6;
+  border-radius: 0;
+  box-shadow: none;
+}
+ 
+.exercise-list li.exercise-item:last-child {
+  border-bottom: none;
+}
+ 
+.exercise-select {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  font-size: 15px;
+  color: #2f3542;
+  cursor: pointer;
+}
+
+/* チェックボックスを丸いチェックマークに */
+.exercise-select input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  border: 2px solid #ccc;
+  border-radius: 50%;
+  display: grid;
+  place-content: center;
+  transform: none;
+  cursor: pointer;
+}
+ 
+.exercise-select input[type="checkbox"]:checked {
+  background: #1e90ff;
+  border-color: #1e90ff;
+}
+ 
+.exercise-select input[type="checkbox"]:checked::after {
+  content: '';
+  width: 6px;
+  height: 11px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: translateY(-1px) rotate(45deg);
+}
+ 
+.exercise-item:has(input:checked) {
+  background: #f0f7ff;
+}
+ 
+.exercise-name {
+  flex: 1;
+}
+ 
+.exercise-badge {
+  font-size: 11px;
+  color: #1e90ff;
+  background: #e8f3ff;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+ 
+.exercise-remove {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 50% !important;
+  background: #f1f2f6 !important;
+  color: #999;
+  cursor: pointer;
+}
+ 
+/* リストにない種目を追加 */
+.custom-form {
+  display: block;
+  margin-top: 20px;
+  padding: 16px;
+  background: #fff;
+  border: 1px dashed #ccc;
+  border-radius: 12px;
+}
+ 
+.custom-form-title {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: bold;
+  color: #747d8c;
+}
+ 
+.custom-form-row {
+  display: flex;
+  gap: 8px;
+}
+ 
+.custom-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px;
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+ 
+.custom-form select {
+  padding: 10px;
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+}
+ 
+.custom-form button {
+  width: 100%;
+  margin-top: 8px;
+  padding: 12px;
+  border-radius: 6px;
+}
+ 
+/* 画面下に固定の追加ボタン */
+.add-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 12px 16px 20px;
+  background: linear-gradient(to top, #f8f9fa 70%, rgba(248, 249, 250, 0));
+}
+ 
+.add-bar .workout-button {
+  margin: 0;
+}
+ 
+.add-bar .workout-button:disabled {
+  background: #ced6e0;
+  box-shadow: none;
+  cursor: default;
+}
+ 
