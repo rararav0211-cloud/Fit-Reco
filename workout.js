@@ -1,4 +1,5 @@
-'use strict';
+import { loadProfile, saveProfile, saveLog } from './firebase.js';
+
 {
   // 今日の日付を表示
   const today = new Date();
@@ -49,11 +50,9 @@
   };
   const DEFAULT_CARDIO_METS = 5.0;
 
-  // 体重（未入力のときは 0）
-  const getBodyWeight = () => {
-    const w = Number(localStorage.getItem('bodyWeight'));
-    return w > 0 ? w : 0;
-  };
+  // 体重（Firestore から読み込む。未入力のときは 0）
+  let bodyWeight = 0;
+  const getBodyWeight = () => bodyWeight;
 
   // 有酸素運動のMETs（ランニングは速度から求める：時速8km → 約8METs）
   const getCardioMets = (title, distance, minutes) => {
@@ -93,18 +92,32 @@
   // 体重の入力欄
   const bodyWeightInput = document.querySelector('#body-weight');
   if (bodyWeightInput) {
-    const saved = Number(localStorage.getItem('bodyWeight'));
-    bodyWeightInput.value = saved > 0 ? saved : '';
+    // 入力中は画面の表示だけ更新する
     bodyWeightInput.addEventListener('input', () => {
       const w = Number(bodyWeightInput.value);
-      if (w > 0) {
-        localStorage.setItem('bodyWeight', String(w));
-      } else {
-        localStorage.removeItem('bodyWeight');
-      }
-      updateCalorieDisplay();
+      bodyWeight = w > 0 ? w : 0;
+      updateWeightMsg();
+    });
+    // 入力が終わったら（欄から離れたら）Firestore に保存
+    bodyWeightInput.addEventListener('change', () => {
+      saveProfile({ bodyWeight }).catch((e) => console.error('体重の保存に失敗しました', e));
     });
   }
+
+  // 保存してある体重を読み込んで入力欄に入れる
+  loadProfile()
+    .then((profile) => {
+      // 読み込み中にすでに入力されていたら、そちらを優先する
+      if (bodyWeight > 0) return;
+      const w = Number(profile.bodyWeight);
+      bodyWeight = w > 0 ? w : 0;
+      if (bodyWeightInput) bodyWeightInput.value = bodyWeight > 0 ? bodyWeight : '';
+      updateWeightMsg();
+    })
+    .catch((e) => {
+      console.error('体重の読み込みに失敗しました', e);
+      updateWeightMsg();
+    });
 
   localStorage.setItem('lastSavedDate', todayStr);
 
@@ -450,13 +463,6 @@
     // 最終保存日を記録
     localStorage.setItem('lastSavedDate', todayStr);
 
-    // 日付を保存
-    const dates = JSON.parse(localStorage.getItem('workoutDates') || '[]');
-    if (!dates.includes(todayStr)) {
-      dates.push(todayStr);
-      localStorage.setItem('workoutDates', JSON.stringify(dates));
-    }
-
     //今日の総重量・有酸素
     let todayTotalWeight = 0;
     let todayDistance = 0;
@@ -474,7 +480,6 @@
     });
     todayDistance = Math.round(todayDistance * 10) / 10;
 
-    const logs = JSON.parse(localStorage.getItem('workoutLogs') || '[]');
     const exercises = todos
       .map(todo => ({
         title: todo.title,
@@ -487,7 +492,7 @@
       }))
       .filter(ex => ex.sets.length > 0);
 
-   const entry = {
+    const entry = {
       date: todayStr,
       totalWeight: todayTotalWeight,
       distance: todayDistance,
@@ -495,13 +500,13 @@
       calories: calcCalories(),
       exercises
     };
-    const existingIndex = logs.findIndex(log => log.date === todayStr);
-    if (existingIndex >= 0) {
-      logs[existingIndex] = entry;
-    } else {
-      logs.push(entry);
-    }
-    localStorage.setItem('workoutLogs', JSON.stringify(logs));
+
+    // Firestore に保存（同じ日なら上書き）
+    // オフラインでも端末に保存され、つながったときに自動で送られるので完了を待たない
+    saveLog(entry).catch((e) => {
+      console.error('記録の保存に失敗しました', e);
+      alert('記録を保存できませんでした。通信状況を確認してもう一度「ワークアウト完了」を押してください。');
+    });
 
     // まとめカードを表示
     showSummary(entry);

@@ -1,0 +1,14 @@
+{
+  "hosting": {
+    "site": "fit-reco",
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "firestore.rules",
+      "README.md",
+      "**/.*",
+      "**/.*/**",
+      "**/node_modules/**"
+    ]
+  }
+}

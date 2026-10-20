@@ -391,3 +391,18 @@ td.worked-out::after {
   font-weight: bold;
   color: #ff6b35;
 }
+/* ヘッダー右上のログインボタン */
+.account-btn {
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: bold;
+  color: #1e90ff;
+  background-color: #fff;
+  border: 1px solid #1e90ff;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.account-btn[hidden] {
+  display: none;
+}

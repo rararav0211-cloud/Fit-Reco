@@ -1,402 +1,447 @@
-'use strict';
+// メイン画面
+import { loadLogs, getCurrentUser, loginWithGoogle, logout } from './firebase.js';
 
-{
-  //メイン画面
+const today = new Date();
+const todayZero = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-  const today = new Date();
-  const todayZero = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+let year = today.getFullYear();
+let month = today.getMonth();
 
-  let year = today.getFullYear();
-  let month = today.getMonth();
+// Firestore から読み込んだワークアウト記録（全件）
+let allLogs = [];
+let isLoaded = false;
 
-  //ワークアウトをした日を保存
-  function getWorkoutDates() {
-    return JSON.parse(localStorage.getItem('workoutDates') || '[]');
+// ワークアウトをした日（記録から作る）
+function getWorkoutDates() {
+  return allLogs.map(log => log.date);
+}
+
+function getCalendarHead() {
+  const dates = [];
+  const d = new Date(year, month, 0).getDate();
+  const n = new Date(year, month, 1).getDay();
+
+  for (let i = 0; i < n; i++) {
+    dates.push({
+      date: d - n + i + 1,
+      isToday: false,
+      isDisabled: true,
+    });
   }
+  return dates;
+}
 
-  function getCalendarHead() {
-    const dates = [];
-    const d = new Date(year, month, 0).getDate();
-    const n = new Date(year, month, 1).getDay();
+function getCalendarBody() {
+  const dates = [];
+  const lastDate = new Date(year, month + 1, 0).getDate();
+  const workoutDates = getWorkoutDates();
 
-    for (let i = 0; i < n; i++) {
-      dates.push({
-        date: d - n + i + 1,
-        isToday: false,
-        isDisabled: true,
-      });
-    }
-    return dates;
-  }
+  for (let i = 1; i <= lastDate; i++) {
+    const targetDate = new Date(year, month, i);
+    const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+    const isToday = targetDate.getTime() === todayZero.getTime();
+    const isFuture = targetDate.getTime() > todayZero.getTime();
 
-  function getCalendarBody() {
-    const dates = [];
-    const lastDate = new Date(year, month + 1, 0).getDate();
-    const workoutDates = getWorkoutDates();
-
-    for (let i = 1; i <= lastDate; i++) {
-      const targetDate = new Date(year, month, i);
-      const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-      const isToday = targetDate.getTime() === todayZero.getTime();
-      const isFuture = targetDate.getTime() > todayZero.getTime();
-
-      dates.push({
-        date: i,
-        isToday: isToday,
-        isDisabled: isFuture,
-        isWorkedOut: workoutDates.includes(fullDate),
-        fullDate: `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`
-      });
-    }
-
-    return dates;
-  }
-
-  function getCalendarTail() {
-    const dates = [];
-    const lastDay = new Date(year, month + 1, 0).getDay();
-
-    for (let i = 1; i < 7 - lastDay; i++) {
-      dates.push({
-        date: i,
-        isToday: false,
-        isDisabled: true,
-      });
-    }
-
-    return dates;
-  }
-
-  function clearCalendar() {
-    const tbody = document.querySelector('tbody');
-    const weekRow = document.getElementById('week');
-
-    // 日付の削除
-    while (tbody?.firstChild) {
-      tbody.removeChild(tbody.firstChild);
-    }
-
-    // 曜日の削除（重複防止）
-    while (weekRow?.firstChild) {
-      weekRow.removeChild(weekRow.firstChild);
-    }
-  }
-
-  function renderTitle() {
-    const title = `${year}/${String(month + 1).padStart(2, '0')}`;
-    const titleEl = document.getElementById('title');
-    if (titleEl) titleEl.textContent = title;
-  }
-
-  function createWeek() {
-    const weekRow = document.getElementById('week');
-    if (!weekRow) return;
-
-    const week = ['日', '月', '火', '水', '木', '金', '土'];
-    week.forEach(day => {
-      const th = document.createElement('th');
-      th.textContent = day;
-      weekRow.appendChild(th);
+    dates.push({
+      date: i,
+      isToday: isToday,
+      isDisabled: isFuture,
+      isWorkedOut: workoutDates.includes(fullDate),
+      fullDate: fullDate,
     });
   }
 
-  function renderWeeks() {
-    const dates = [
-      ...getCalendarHead(),
-      ...getCalendarBody(),
-      ...getCalendarTail(),
-    ];
-    const weeks = [];
-    const weeksCount = dates.length / 7;
+  return dates;
+}
 
-    for (let i = 0; i < weeksCount; i++) {
-      weeks.push(dates.splice(0, 7));
-    }
+function getCalendarTail() {
+  const dates = [];
+  const lastDay = new Date(year, month + 1, 0).getDay();
 
-    weeks.forEach(week => {
-      const tr = document.createElement('tr');
-      week.forEach(date => {
-        const td = document.createElement('td');
-
-        td.textContent = date.date;
-        if (date.isToday) {
-          td.classList.add('today');
-        }
-
-        if (date.isWorkedOut) {
-          td.classList.add('worked-out');
-        }
-
-        if (date.isDisabled) {
-          td.classList.add('disabled');
-        } else {
-          td.style.cursor = 'pointer';
-          td.addEventListener('click', () => {
-            handleDateClick(date.fullDate);
-          });
-        }
-
-        tr.appendChild(td);
-      });
-      document.querySelector('tbody')?.appendChild(tr);
+  for (let i = 1; i < 7 - lastDay; i++) {
+    dates.push({
+      date: i,
+      isToday: false,
+      isDisabled: true,
     });
   }
 
-  // 月ごとの合計（総重量・有酸素・消費カロリー）
-  function getMonthStats(y, m) {
-    const logs = JSON.parse(localStorage.getItem('workoutLogs') || '[]');
-    const prefix = `${y}-${String(m + 1).padStart(2, '0')}`;
-    return logs
-      .filter(log => log.date && log.date.startsWith(prefix))
-      .reduce((s, log) => ({
-        weight: s.weight + (log.totalWeight || 0),
-        distance: s.distance + (log.distance || 0),
-        minutes: s.minutes + (log.minutes || 0),
-        calories: s.calories + (log.calories || 0),
-      }), { weight: 0, distance: 0, minutes: 0, calories: 0 });
-  }
- 
-  function diffText(cur, prev, unit) {
-    const d = Math.round((cur - prev) * 10) / 10;
-    return `${d > 0 ? '+' : ''}${d.toLocaleString()}${unit}`;
+  return dates;
+}
+
+function clearCalendar() {
+  const tbody = document.querySelector('tbody');
+  const weekRow = document.getElementById('week');
+
+  // 日付の削除
+  while (tbody?.firstChild) {
+    tbody.removeChild(tbody.firstChild);
   }
 
-  function renderMonthStats() {
-    const cur = getMonthStats(year, month);
-    const prev = getMonthStats(month === 0 ? year - 1 : year, month === 0 ? 11 : month - 1);
-    const dist = Math.round(cur.distance * 10) / 10;
- 
-    const total = document.getElementById('month-total');
-    if (total) total.innerHTML = `${cur.weight.toLocaleString()}<small>kg</small>`;
-    const running = document.getElementById('month-running');
-    if (running) running.innerHTML = `${dist}<small>km</small> ${cur.minutes}<small>分</small>`;
- 
-    const calories = document.getElementById('month-calories');
-    if (calories) calories.innerHTML = `${cur.calories.toLocaleString()}<small>kcal</small>`;
-    const caloriesDiff = document.getElementById('calories-diff');
-    if (caloriesDiff) {
-      caloriesDiff.textContent = `前月比 ${diffText(cur.calories, prev.calories, 'kcal')}`;
-    }
-
-    const totalDiff = document.getElementById('total-diff');
-    if (totalDiff) {
-      totalDiff.textContent = `前月比 ${diffText(cur.weight, prev.weight, 'kg')}`;
-    }
-    const runningDiff = document.getElementById('running-diff');
-    if (runningDiff) {
-      runningDiff.textContent =
-        `前月比 ${diffText(cur.distance, prev.distance, 'km')} ${diffText(cur.minutes, prev.minutes, '分')}`;
-    }
+  // 曜日の削除（重複防止）
+  while (weekRow?.firstChild) {
+    weekRow.removeChild(weekRow.firstChild);
   }
+}
 
-  // nextボタンの有効化／グレーアウト切り替え
-  function toggleNextButton() {
-    const nextBtn = document.getElementById('next');
-    if (!nextBtn) return;
+function renderTitle() {
+  const title = `${year}/${String(month + 1).padStart(2, '0')}`;
+  const titleEl = document.getElementById('title');
+  if (titleEl) titleEl.textContent = title;
+}
 
-    // 表示中の年月が「今月」または今日以降の場合はグレーアウト
-    const isCurrentOrFutureMonth =
-      year > today.getFullYear() ||
-      (year === today.getFullYear() && month >= today.getMonth());
+function createWeek() {
+  const weekRow = document.getElementById('week');
+  if (!weekRow) return;
 
-    if (isCurrentOrFutureMonth) {
-      nextBtn.classList.add('disabled');
-    } else {
-      nextBtn.classList.remove('disabled');
-    }
-  }
-
-  // カレンダーの日付タップ → その日の記録カードまでスクロールして開く
-  function handleDateClick(formattedDate) {
-    const item = document.querySelector(`.daily-log-item[data-date="${formattedDate}"]`);
-    if (!item) return; // 記録がない日は何もしない
-
-    setLogOpen(item, true);
-    item.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-    // どのカードが開いたか分かるように一瞬ハイライト
-    item.classList.remove('highlight');
-    void item.offsetWidth; // アニメーションを再スタートさせるため
-    item.classList.add('highlight');
-  }
-
-  // 記録カードの開閉
-  function setLogOpen(item, open) {
-    const detail = item.querySelector('.daily-log-detail');
-    const toggleBtn = item.querySelector('.daily-log-toggle');
-    if (!detail || !toggleBtn) return;
-
-    detail.hidden = !open;
-    item.classList.toggle('open', open);
-    toggleBtn.setAttribute('aria-expanded', String(open));
-    toggleBtn.setAttribute('aria-label', `${item.dataset.label}のワークアウト詳細を${open ? '閉じる' : '開く'}`);
-  }
-
-  function createCalendar() {
-    clearCalendar();
-    renderTitle();
-    createWeek();
-    renderWeeks();
-    toggleNextButton();
-    renderMonthStats();
-    renderDailyLogs();
-  }
-
-  // イベントリスナー
-  document.getElementById('prev')?.addEventListener('click', () => {
-    month--;
-    if (month < 0) {
-      year--;
-      month = 11;
-    }
-    createCalendar();
+  const week = ['日', '月', '火', '水', '木', '金', '土'];
+  week.forEach(day => {
+    const th = document.createElement('th');
+    th.textContent = day;
+    weekRow.appendChild(th);
   });
+}
 
-  document.getElementById('next')?.addEventListener('click', () => {
-    const isCurrentOrFutureMonth =
-      year > today.getFullYear() ||
-      (year === today.getFullYear() && month >= today.getMonth());
+function renderWeeks() {
+  const dates = [
+    ...getCalendarHead(),
+    ...getCalendarBody(),
+    ...getCalendarTail(),
+  ];
+  const weeks = [];
+  const weeksCount = dates.length / 7;
 
-    // 今月以降はクリックしても移動させない
-    if (isCurrentOrFutureMonth) {
-      return;
-    }
+  for (let i = 0; i < weeksCount; i++) {
+    weeks.push(dates.splice(0, 7));
+  }
 
-    month++;
-    if (month > 11) {
-      year++;
-      month = 0;
-    }
-    createCalendar();
-  });
+  weeks.forEach(week => {
+    const tr = document.createElement('tr');
+    week.forEach(date => {
+      const td = document.createElement('td');
 
-  document.getElementById('today')?.addEventListener('click', () => {
-    year = today.getFullYear();
-    month = today.getMonth();
-    createCalendar();
-  });
+      td.textContent = date.date;
+      if (date.isToday) {
+        td.classList.add('today');
+      }
 
-  // 初期表示
-  createCalendar();
+      if (date.isWorkedOut) {
+        td.classList.add('worked-out');
+      }
 
-  // ワークアウト開始ボタン
-  document.getElementById('start-workout-btn')?.addEventListener('click', () => {
-    window.location.href = 'workout.html';
-  });
+      if (date.isDisabled) {
+        td.classList.add('disabled');
+      } else {
+        td.style.cursor = 'pointer';
+        td.addEventListener('click', () => {
+          handleDateClick(date.fullDate);
+        });
+      }
 
-  //トレーニング記録
-  const monthTotal = document.getElementById('month-total');
-  const monthCalories = document.getElementById('month-calories');
-
-  // その日のワークアウト詳細を組み立てる
-  function buildLogDetail(log) {
-    const wrap = document.createElement('div');
-    const exercises = log.exercises || [];
-
-    // 消費カロリー（カロリー機能を入れる前の記録や、体重未入力の日は表示しない）
-    if (log.calories) {
-      const kcal = document.createElement('p');
-      kcal.className = 'detail-calories';
-      kcal.textContent = `消費カロリー 約${log.calories.toLocaleString()}kcal`;
-      wrap.appendChild(kcal);
-    }
-
-    // 詳細を保存する前の古い記録は合計値のみ表示
-    if (exercises.length === 0) {
-      const p = document.createElement('p');
-      p.className = 'no-log-msg';
-      p.textContent = log.distance
-        ? `有酸素 ${log.distance}km / ${log.minutes || 0}分`
-        : '種目の詳細は記録されていません';
-      wrap.appendChild(p);
-      return wrap;
-    }
-
-    exercises.forEach(ex => {
-      const block = document.createElement('div');
-      block.className = 'detail-exercise';
-
-      const title = document.createElement('div');
-      title.className = 'detail-exercise-title';
-      title.textContent = ex.title;
-      block.appendChild(title);
-
-      const ol = document.createElement('ol');
-      ol.className = 'detail-set-list';
-      ex.sets.forEach(set => {
-        const item = document.createElement('li');
-        item.textContent = ex.type === 'cardio'
-          ? `${set.distance}km / ${set.minutes}分`
-          : `${set.weight}kg × ${set.reps}回`;
-        ol.appendChild(item);
-      });
-      block.appendChild(ol);
-      wrap.appendChild(block);
+      tr.appendChild(td);
     });
+    document.querySelector('tbody')?.appendChild(tr);
+  });
+}
+
+// 月ごとの合計（総重量・有酸素・消費カロリー）
+function getMonthStats(y, m) {
+  const prefix = `${y}-${String(m + 1).padStart(2, '0')}`;
+  return allLogs
+    .filter(log => log.date && log.date.startsWith(prefix))
+    .reduce((s, log) => ({
+      weight: s.weight + (log.totalWeight || 0),
+      distance: s.distance + (log.distance || 0),
+      minutes: s.minutes + (log.minutes || 0),
+      calories: s.calories + (log.calories || 0),
+    }), { weight: 0, distance: 0, minutes: 0, calories: 0 });
+}
+
+function diffText(cur, prev, unit) {
+  const d = Math.round((cur - prev) * 10) / 10;
+  return `${d > 0 ? '+' : ''}${d.toLocaleString()}${unit}`;
+}
+
+function renderMonthStats() {
+  const cur = getMonthStats(year, month);
+  const prev = getMonthStats(month === 0 ? year - 1 : year, month === 0 ? 11 : month - 1);
+  const dist = Math.round(cur.distance * 10) / 10;
+
+  const total = document.getElementById('month-total');
+  if (total) total.innerHTML = `${cur.weight.toLocaleString()}<small>kg</small>`;
+  const running = document.getElementById('month-running');
+  if (running) running.innerHTML = `${dist}<small>km</small> ${cur.minutes}<small>分</small>`;
+
+  const calories = document.getElementById('month-calories');
+  if (calories) calories.innerHTML = `${cur.calories.toLocaleString()}<small>kcal</small>`;
+  const caloriesDiff = document.getElementById('calories-diff');
+  if (caloriesDiff) {
+    caloriesDiff.textContent = `前月比 ${diffText(cur.calories, prev.calories, 'kcal')}`;
+  }
+
+  const totalDiff = document.getElementById('total-diff');
+  if (totalDiff) {
+    totalDiff.textContent = `前月比 ${diffText(cur.weight, prev.weight, 'kg')}`;
+  }
+  const runningDiff = document.getElementById('running-diff');
+  if (runningDiff) {
+    runningDiff.textContent =
+      `前月比 ${diffText(cur.distance, prev.distance, 'km')} ${diffText(cur.minutes, prev.minutes, '分')}`;
+  }
+}
+
+// nextボタンの有効化／グレーアウト切り替え
+function toggleNextButton() {
+  const nextBtn = document.getElementById('next');
+  if (!nextBtn) return;
+
+  // 表示中の年月が「今月」または今日以降の場合はグレーアウト
+  const isCurrentOrFutureMonth =
+    year > today.getFullYear() ||
+    (year === today.getFullYear() && month >= today.getMonth());
+
+  if (isCurrentOrFutureMonth) {
+    nextBtn.classList.add('disabled');
+  } else {
+    nextBtn.classList.remove('disabled');
+  }
+}
+
+// カレンダーの日付タップ → その日の記録カードまでスクロールして開く
+function handleDateClick(formattedDate) {
+  const item = document.querySelector(`.daily-log-item[data-date="${formattedDate}"]`);
+  if (!item) return; // 記録がない日は何もしない
+
+  setLogOpen(item, true);
+  item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  // どのカードが開いたか分かるように一瞬ハイライト
+  item.classList.remove('highlight');
+  void item.offsetWidth; // アニメーションを再スタートさせるため
+  item.classList.add('highlight');
+}
+
+// 記録カードの開閉
+function setLogOpen(item, open) {
+  const detail = item.querySelector('.daily-log-detail');
+  const toggleBtn = item.querySelector('.daily-log-toggle');
+  if (!detail || !toggleBtn) return;
+
+  detail.hidden = !open;
+  item.classList.toggle('open', open);
+  toggleBtn.setAttribute('aria-expanded', String(open));
+  toggleBtn.setAttribute('aria-label', `${item.dataset.label}のワークアウト詳細を${open ? '閉じる' : '開く'}`);
+}
+
+function createCalendar() {
+  clearCalendar();
+  renderTitle();
+  createWeek();
+  renderWeeks();
+  toggleNextButton();
+  renderMonthStats();
+  renderDailyLogs();
+}
+
+// その日のワークアウト詳細を組み立てる
+function buildLogDetail(log) {
+  const wrap = document.createElement('div');
+  const exercises = log.exercises || [];
+
+  // 消費カロリー（カロリー機能を入れる前の記録や、体重未入力の日は表示しない）
+  if (log.calories) {
+    const kcal = document.createElement('p');
+    kcal.className = 'detail-calories';
+    kcal.textContent = `消費カロリー 約${log.calories.toLocaleString()}kcal`;
+    wrap.appendChild(kcal);
+  }
+
+  // 詳細を保存する前の古い記録は合計値のみ表示
+  if (exercises.length === 0) {
+    const p = document.createElement('p');
+    p.className = 'no-log-msg';
+    p.textContent = log.distance
+      ? `有酸素 ${log.distance}km / ${log.minutes || 0}分`
+      : '種目の詳細は記録されていません';
+    wrap.appendChild(p);
     return wrap;
   }
 
-  // 今月の表示されているログを日付ごとに一覧表示
-  function renderDailyLogs() {
-    const container = document.getElementById('daily-logs-container');
-    if (!container) return;
+  exercises.forEach(ex => {
+    const block = document.createElement('div');
+    block.className = 'detail-exercise';
 
-    const logs = JSON.parse(localStorage.getItem('workoutLogs') || '[]');
-    const targetMonthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+    const title = document.createElement('div');
+    title.className = 'detail-exercise-title';
+    title.textContent = ex.title;
+    block.appendChild(title);
 
-    // 表示中の月の日付ログをフィルタリングして昇順に並び替え
-    const currentMonthLogs = logs
-      .filter(log => log.date && log.date.startsWith(targetMonthPrefix))
-      .sort((a, b) => a.date.localeCompare(b.date));
+    const ol = document.createElement('ol');
+    ol.className = 'detail-set-list';
+    ex.sets.forEach(set => {
+      const item = document.createElement('li');
+      item.textContent = ex.type === 'cardio'
+        ? `${set.distance}km / ${set.minutes}分`
+        : `${set.weight}kg × ${set.reps}回`;
+      ol.appendChild(item);
+    });
+    block.appendChild(ol);
+    wrap.appendChild(block);
+  });
+  return wrap;
+}
 
-    container.innerHTML = '';
+// 表示中の月のログを日付ごとに一覧表示
+function renderDailyLogs() {
+  const container = document.getElementById('daily-logs-container');
+  if (!container) return;
 
-    if (currentMonthLogs.length === 0) {
-      container.innerHTML = 'この月のワークアウト記録はありません';
-      return;
-    }
-    const ul = document.createElement('ul');
-    ul.className = 'daily-log-list';
+  const targetMonthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
 
-    currentMonthLogs.forEach(log => {
-      // 日付の表示フォーマット（例: "2026-09-28" -> "9月28日"）
-      const [, m, d] = log.date.split('-');
-      const formattedDate = `${parseInt(m, 10)}月${parseInt(d, 10)}日`;
+  // 表示中の月の日付ログをフィルタリングして昇順に並び替え
+  const currentMonthLogs = allLogs
+    .filter(log => log.date && log.date.startsWith(targetMonthPrefix))
+    .sort((a, b) => a.date.localeCompare(b.date));
 
-      const li = document.createElement('li');
-      li.className = 'daily-log-item';
-      li.dataset.date = log.date;
-      li.dataset.label = formattedDate;
-      const header = document.createElement('div');
-      header.className = 'daily-log-header';
-      header.innerHTML = `
-        <span class="daily-log-date">${formattedDate}</span>
-        <span class="daily-log-weight">総重量: <strong>${(log.totalWeight || 0).toLocaleString()}</strong>kg</span>
-      `;
+  container.innerHTML = '';
 
-      const toggleBtn = document.createElement('button');
-      toggleBtn.type = 'button';
-      toggleBtn.className = 'daily-log-toggle';
-      toggleBtn.textContent = '+';
-      toggleBtn.setAttribute('aria-label', `${formattedDate}のワークアウト詳細を開く`);
-      toggleBtn.setAttribute('aria-expanded', 'false');
-      header.appendChild(toggleBtn);
+  if (!isLoaded) {
+    container.innerHTML = '<p class="no-log-msg">記録を読み込み中…</p>';
+    return;
+  }
 
-      // 詳細エリア（初期は非表示）
-      const detail = document.createElement('div');
-      detail.className = 'daily-log-detail';
-      detail.hidden = true;
-      detail.appendChild(buildLogDetail(log));
+  if (currentMonthLogs.length === 0) {
+    container.innerHTML = '<p class="no-log-msg">この月のワークアウト記録はありません</p>';
+    return;
+  }
+  const ul = document.createElement('ul');
+  ul.className = 'daily-log-list';
 
-      toggleBtn.addEventListener('click', () => {
-        setLogOpen(li, detail.hidden);
-      });
+  currentMonthLogs.forEach(log => {
+    // 日付の表示フォーマット（例: "2026-09-28" -> "9月28日"）
+    const [, m, d] = log.date.split('-');
+    const formattedDate = `${parseInt(m, 10)}月${parseInt(d, 10)}日`;
 
-      li.appendChild(header);
-      li.appendChild(detail);
-      ul.appendChild(li);
+    const li = document.createElement('li');
+    li.className = 'daily-log-item';
+    li.dataset.date = log.date;
+    li.dataset.label = formattedDate;
+    const header = document.createElement('div');
+    header.className = 'daily-log-header';
+    header.innerHTML = `
+      <span class="daily-log-date">${formattedDate}</span>
+      <span class="daily-log-weight">総重量: <strong>${(log.totalWeight || 0).toLocaleString()}</strong>kg</span>
+    `;
+
+    const toggleBtn = document.createElement('button');
+    toggleBtn.type = 'button';
+    toggleBtn.className = 'daily-log-toggle';
+    toggleBtn.textContent = '+';
+    toggleBtn.setAttribute('aria-label', `${formattedDate}のワークアウト詳細を開く`);
+    toggleBtn.setAttribute('aria-expanded', 'false');
+    header.appendChild(toggleBtn);
+
+    // 詳細エリア（初期は非表示）
+    const detail = document.createElement('div');
+    detail.className = 'daily-log-detail';
+    detail.hidden = true;
+    detail.appendChild(buildLogDetail(log));
+
+    toggleBtn.addEventListener('click', () => {
+      setLogOpen(li, detail.hidden);
     });
 
-    container.appendChild(ul);
+    li.appendChild(header);
+    li.appendChild(detail);
+    ul.appendChild(li);
+  });
+
+  container.appendChild(ul);
+}
+
+// ===== ログインボタン（ヘッダー右上） =====
+async function renderAccount() {
+  const btn = document.getElementById('account-btn');
+  if (!btn) return;
+
+  const user = await getCurrentUser();
+  btn.textContent = user.isGuest ? 'Googleでログイン' : 'ログアウト';
+  btn.title = user.isGuest ? '記録を引き継いでほかの端末でも見られるようにします' : user.name;
+  btn.hidden = false;
+
+  btn.onclick = async () => {
+    try {
+      if (user.isGuest) {
+        await loginWithGoogle();
+      } else {
+        if (!confirm('ログアウトしますか？\nもう一度Googleでログインすれば記録は戻ります。')) return;
+        await logout();
+      }
+      location.reload();
+    } catch (e) {
+      // ポップアップを閉じただけのときは何もしない
+      if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') return;
+      console.error(e);
+      alert('ログインに失敗しました。時間をおいてもう一度お試しください。');
+    }
+  };
+}
+
+// ===== イベントリスナー =====
+document.getElementById('prev')?.addEventListener('click', () => {
+  month--;
+  if (month < 0) {
+    year--;
+    month = 11;
+  }
+  createCalendar();
+});
+
+document.getElementById('next')?.addEventListener('click', () => {
+  const isCurrentOrFutureMonth =
+    year > today.getFullYear() ||
+    (year === today.getFullYear() && month >= today.getMonth());
+
+  // 今月以降はクリックしても移動させない
+  if (isCurrentOrFutureMonth) {
+    return;
+  }
+
+  month++;
+  if (month > 11) {
+    year++;
+    month = 0;
+  }
+  createCalendar();
+});
+
+// ワークアウト開始ボタン
+document.getElementById('start-workout-btn')?.addEventListener('click', () => {
+  window.location.href = 'workout.html';
+});
+
+// ===== 初期表示 =====
+// まずカレンダーの枠を出しておき、記録を読み込んだら描き直す
+createCalendar();
+
+// ログインボタンは、記録の読み込みとは別に表示する
+renderAccount().catch((e) => {
+  console.error('ログイン状態の確認に失敗しました', e);
+});
+
+try {
+  allLogs = await loadLogs();
+  isLoaded = true;
+  createCalendar();
+} catch (e) {
+  console.error('記録の読み込みに失敗しました', e);
+  const container = document.getElementById('daily-logs-container');
+  if (container) {
+    // 原因が分かるよう、エラーの種類も画面に出す
+    const p = document.createElement('p');
+    p.className = 'no-log-msg';
+    p.textContent = `記録を読み込めませんでした（${e.code || e.message}）`;
+    container.innerHTML = '';
+    container.appendChild(p);
   }
 }

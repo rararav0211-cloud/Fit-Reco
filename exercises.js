@@ -1,4 +1,5 @@
-'use strict';
+import { loadProfile, saveProfile } from './firebase.js';
+
 {
   // ===== 種目リスト =====
 
@@ -49,10 +50,11 @@
     }
   };
 
-  // 自分で追加した種目
-  let customExercises = loadArray('customExercises');
+  // 自分で追加した種目（Firestore から読み込む）
+  let customExercises = [];
   const saveCustomExercises = () => {
-    localStorage.setItem('customExercises', JSON.stringify(customExercises));
+    saveProfile({ customExercises })
+      .catch((e) => console.error('種目の保存に失敗しました', e));
   };
 
   const getAllExercises = () => [
@@ -237,4 +239,19 @@
   renderTabs();
   renderExerciseList();
   updateAddButton();
+
+  // 自分で追加した種目を読み込んだら一覧を描き直す
+  // （読み込み前に追加して上書きしないよう、それまでは追加フォームを止めておく）
+  const customSubmit = customForm.querySelector('button[type="submit"]');
+  customSubmit.disabled = true;
+  loadProfile()
+    .then((profile) => {
+      customExercises = Array.isArray(profile.customExercises) ? profile.customExercises : [];
+      renderTabs();
+      renderExerciseList();
+    })
+    .catch((e) => console.error('種目の読み込みに失敗しました', e))
+    .finally(() => {
+      customSubmit.disabled = false;
+    });
 }
