@@ -6,7 +6,7 @@
 
 スマホでもPCでも、ログインすれば同じ記録を見られます。登録しなくてもすぐに使い始められます。
 
-<img src="images/home.png" width="250"> <img src="images/workout.png" width="250"> <img src="images/exercises.png" width="250">
+<img src="images/home.jpg" width="250"> <img src="images/workout.jpg" width="250"> <img src="images/exercises.jpg" width="250">
 
 ## 作ったきっかけ
 
