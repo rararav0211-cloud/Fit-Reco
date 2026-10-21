@@ -85,20 +85,35 @@ export const loginWithGoogle = async () => {
   if (!user.isAnonymous) return;
 
   try {
+    // 初めてGoogleでログインする場合：今のゲストにGoogleを結びつける（記録はそのまま）
     await linkWithPopup(user, provider);
   } catch (e) {
     // そのGoogleアカウントがすでに使われている（別の端末で登録済みなど）
     if (e.code !== 'auth/credential-already-in-use') throw e;
-    const ok = confirm(
-      'このGoogleアカウントにはすでに記録があります。切り替えますか？\n' +
-      '（ログイン前にこの端末でつけた記録は引き継がれません）'
-    );
-    if (!ok) return;
+
+    // 切り替える前に、この端末でゲストのままつけた記録を読んでおく
+    const guestSnap = await getDocs(logsCol());
+    const guestLogs = guestSnap.docs.map((d) => d.data());
+
+    // そのGoogleアカウントに切り替える
     const credential = GoogleAuthProvider.credentialFromError(e);
     if (credential) {
       await signInWithCredential(auth, credential);
     } else {
       await signInWithPopup(auth, provider);
+    }
+
+    // ゲストの記録を、Googleアカウントにまだない日付の分だけ追加する
+    // （同じ日の記録がすでにある場合は、Googleアカウント側を残す）
+    if (guestLogs.length > 0) {
+      const accountSnap = await getDocs(logsCol());
+      const existingDates = new Set(accountSnap.docs.map((d) => d.id));
+      const newLogs = guestLogs.filter((log) => log.date && !existingDates.has(log.date));
+      if (newLogs.length > 0) {
+        const batch = writeBatch(db);
+        newLogs.slice(0, 400).forEach((log) => batch.set(doc(logsCol(), log.date), log));
+        await batch.commit();
+      }
     }
   }
 };
