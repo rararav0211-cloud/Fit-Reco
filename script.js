@@ -248,14 +248,6 @@ function buildLogDetail(log) {
   const wrap = document.createElement('div');
   const exercises = log.exercises || [];
 
-  // 消費カロリー（カロリー機能を入れる前の記録や、体重未入力の日は表示しない）
-  if (log.calories) {
-    const kcal = document.createElement('p');
-    kcal.className = 'detail-calories';
-    kcal.textContent = `消費カロリー 約${log.calories.toLocaleString()}kcal`;
-    wrap.appendChild(kcal);
-  }
-
   // 詳細を保存する前の古い記録は合計値のみ表示
   if (exercises.length === 0) {
     const p = document.createElement('p');
@@ -330,7 +322,10 @@ function renderDailyLogs() {
     header.className = 'daily-log-header';
     header.innerHTML = `
       <span class="daily-log-date">${formattedDate}</span>
-      <span class="daily-log-weight">総重量: <strong>${(log.totalWeight || 0).toLocaleString()}</strong>kg</span>
+      <span class="daily-log-stats">
+        <span class="daily-log-weight">総重量 <strong>${(log.totalWeight || 0).toLocaleString()}</strong>kg</span>
+        <span class="daily-log-calories">消費 <strong>${(log.calories || 0).toLocaleString()}</strong>kcal</span>
+      </span>
     `;
 
     const toggleBtn = document.createElement('button');

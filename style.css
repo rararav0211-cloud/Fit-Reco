@@ -198,8 +198,6 @@ tbody td:last-child {
   color: #2e6bd5;
 }
 
-/* 土曜日：緑/青 */
-
 td.disabled {
   opacity: 0.2;
   pointer-events: none;
@@ -283,14 +281,32 @@ td.worked-out::after {
   font-size: 15px;
 }
 
-.daily-log-weight {
-  font-size: 14px;
-  color: #555;
+/* 記録カード：その日の総重量と消費カロリー */
+.daily-log-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+}
+
+.daily-log-weight,
+.daily-log-calories {
+  font-size: 13px;
+  color: #747d8c;
+  white-space: nowrap;
+}
+
+.daily-log-weight strong,
+.daily-log-calories strong {
+  margin: 0 1px;
+  font-size: 16px;
 }
 
 .daily-log-weight strong {
   color: #1e90ff;
-  font-size: 16px;
+}
+
+.daily-log-calories strong {
+  color: #ff6b35;
 }
 
 .no-log-msg {
@@ -384,13 +400,6 @@ td.worked-out::after {
   color: #ff6b35;
 }
  
-/* 記録カード：消費カロリー */
-.detail-calories {
-  margin: 0 0 10px;
-  font-size: 13px;
-  font-weight: bold;
-  color: #ff6b35;
-}
 /* ヘッダー右上のログインボタン */
 .account-btn {
   padding: 6px 12px;
