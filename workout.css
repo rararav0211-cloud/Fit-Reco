@@ -78,9 +78,95 @@ li {
 
 li h2 {
   font-size: 19px;
-  margin: 0 0 16px 0;
+  margin: 0;
   font-weight: bold;
   color: #2f3542;
+}
+
+/* 種目カードの見出し */
+.card-header {
+  margin-bottom: 16px;
+}
+
+/* 種目カード：左側に持ち手を置くぶん、左の余白を広げる */
+#todos > li {
+  position: relative;
+  padding-left: 48px;
+}
+
+/* ドラッグ用の持ち手（カードの左側いっぱい） */
+li button.drag-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 32px;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  line-height: 1;
+  color: #a4b0be;
+  background-color: #f1f2f6;
+  border: none;
+  border-right: 1px solid #e0e0e0;
+  border-radius: 12px 0 0 12px; /* カードの角の丸みに合わせる */
+  cursor: grab;
+  touch-action: none; /* 持ち手を触ったときは画面をスクロールさせない */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+li button.drag-handle:hover {
+  color: #1e90ff;
+  background-color: #e8f3ff;
+}
+
+/* 並び替えの案内（最初の一度だけ表示） */
+.drag-hint {
+  margin: 16px 0 0;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #1e90ff;
+  background-color: #e8f3ff;
+  border-radius: 10px;
+}
+
+.drag-hint[hidden] {
+  display: none;
+}
+
+.drag-hint-icon {
+  display: inline-block;
+  padding: 0 6px;
+  font-weight: bold;
+  background-color: #fff;
+  border-radius: 4px;
+}
+
+/* ドラッグ中のカード */
+#todos > li.dragging {
+  position: relative;
+  z-index: 5;
+  border-color: #1e90ff;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+  opacity: 0.95;
+}
+
+#todos > li.dragging button.drag-handle {
+  color: #fff;
+  background-color: #1e90ff;
+  border-right-color: #1e90ff;
+  cursor: grabbing;
+}
+
+/* ドラッグ中は文字が選択されないようにする */
+body.is-dragging {
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grabbing;
 }
 
 li table {
@@ -243,16 +329,6 @@ li table input[type="number"] {
   color: #555;
 }
 
-/* ===== 種目追加 ===== */
- 
-.empty-msg[hidden] {
-  display: none;
-}
- 
-.add-exercise-btn:active {
-  background: #f0f7ff;
-}
-
 /* 種目追加ボタン */
 #add-btn {
   flex: 1;
@@ -261,7 +337,7 @@ li table input[type="number"] {
   border-radius: 12px;
 }
 
-/* 体重・消費カロリー */
+/* 体重 */
 .calorie-bar {
   display: flex;
   align-items: center;
@@ -280,6 +356,12 @@ li table input[type="number"] {
   gap: 6px;
   font-size: 14px;
   color: #555;
+  white-space: nowrap;
+}
+
+.body-weight-note {
+  font-size: 12px;
+  color: #a4b0be;
 }
  
 .body-weight input {
@@ -290,18 +372,6 @@ li table input[type="number"] {
   text-align: center;
   border: 1px solid #ccc;
   border-radius: 6px;
-}
- 
-.today-calories {
-  margin: 0;
-  font-size: 14px;
-  color: #555;
-}
- 
-.today-calories strong {
-  margin: 0 2px;
-  font-size: 22px;
-  color: #ff6b35;
 }
  
 /* 体重未入力の案内 */

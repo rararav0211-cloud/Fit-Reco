@@ -195,11 +195,23 @@ import { loadProfile, saveProfile, saveLog } from './firebase.js';
     const li = document.createElement('li');
 
     // 種目名（タイトル）
-    const label = document.createElement('label');
+    const cardHeader = document.createElement('div');
+    cardHeader.className = 'card-header';
     const title = document.createElement('h2');
     title.textContent = todo.title;
-    label.appendChild(title);
-    li.appendChild(label);
+    cardHeader.appendChild(title);
+
+    // ドラッグ用の持ち手（カードの左側いっぱい。ここをつかんで上下に動かす）
+    const handle = document.createElement('button');
+    handle.type = 'button';
+    handle.className = 'drag-handle';
+    handle.textContent = '≡';
+    handle.setAttribute('aria-label', `${todo.title}をドラッグして並び替え`);
+    handle.addEventListener('pointerdown', (e) => startDrag(e, li));
+    li.appendChild(handle);
+
+    li.appendChild(cardHeader);
+    li.dataset.id = todo.id;
 
     // テーブル
     const table = document.createElement('table');
@@ -321,6 +333,7 @@ import { loadProfile, saveProfile, saveLog } from './firebase.js';
       li.remove();
       todos = todos.filter((item) => item.id !== todo.id);
       saveTodos();
+      updateDragHint();
     });
 
 
@@ -342,6 +355,140 @@ import { loadProfile, saveProfile, saveLog } from './firebase.js';
     todos.forEach((todo) => {
       renderTodo(todo);
     });
+    updateDragHint();
+  };
+
+  // ===== 並び替えの案内（一度ドラッグしたら二度と出さない） =====
+  const DRAG_HINT_KEY = 'dragHintDone';
+
+  const isDragHintDone = () => {
+    try {
+      return localStorage.getItem(DRAG_HINT_KEY) === '1';
+    } catch (e) {
+      return false;
+    }
+  };
+
+  // 種目が2つ以上あって、まだ一度もドラッグしていなければ案内を出す
+  const updateDragHint = () => {
+    const hint = document.querySelector('#drag-hint');
+    if (hint) hint.hidden = isDragHintDone() || todos.length < 2;
+  };
+
+  // ===== ドラッグで並び替え =====
+  // Pointer Events を使うので、マウスでも指でも同じ処理で動く
+
+  let drag = null; // ドラッグ中の情報
+
+  const startDrag = (e, card) => {
+    // マウスは左ボタンだけ。すでにドラッグ中なら無視
+    if (drag || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    e.preventDefault();
+
+    drag = {
+      card,
+      pointerId: e.pointerId,
+      handle: e.currentTarget,
+      startPageY: e.pageY,      // ドラッグを始めたときの指（マウス）の位置
+      startTop: card.offsetTop, // ドラッグを始めたときのカードの位置
+      pageY: e.pageY,
+      scrollTimer: null,
+    };
+    drag.handle.setPointerCapture(e.pointerId);
+    card.classList.add('dragging');
+    document.body.classList.add('is-dragging');
+
+    drag.handle.addEventListener('pointermove', onDragMove);
+    drag.handle.addEventListener('pointerup', endDrag);
+    drag.handle.addEventListener('pointercancel', endDrag);
+    drag.handle.addEventListener('lostpointercapture', endDrag);
+    autoScroll();
+  };
+
+  // 指（マウス）の位置にカードを合わせ、ほかのカードの中央を越えたら入れ替える
+  // ※ つかんでいるカード自体を動かすとドラッグが途切れるので、となりのカードの方を動かす
+  const updateDragPosition = () => {
+    const { card } = drag;
+    const list = card.parentElement;
+    let top = drag.startTop + (drag.pageY - drag.startPageY);
+
+    // 一覧の外（上の日付や下のボタン）まではみ出さないようにする
+    const first = list.firstElementChild;
+    const last = list.lastElementChild;
+    const minTop = first.offsetTop;
+    const maxTop = last.offsetTop + last.offsetHeight - card.offsetHeight;
+    top = Math.min(Math.max(top, minTop), maxTop);
+
+    let moved = true;
+    while (moved) {
+      moved = false;
+      const prev = card.previousElementSibling;
+      const next = card.nextElementSibling;
+      if (prev && top < prev.offsetTop + prev.offsetHeight / 2) {
+        card.after(prev);
+        moved = true;
+      } else if (next && top + card.offsetHeight > next.offsetTop + next.offsetHeight / 2) {
+        card.before(next);
+        moved = true;
+      }
+    }
+
+    card.style.transform = `translateY(${top - card.offsetTop}px)`;
+  };
+
+  const onDragMove = (e) => {
+    if (!drag || e.pointerId !== drag.pointerId) return;
+    drag.pageY = e.pageY;
+    drag.clientY = e.clientY;
+    updateDragPosition();
+  };
+
+  // 画面の上端・下端に近づけたら自動でスクロールする
+  const autoScroll = () => {
+    if (!drag) return;
+    const edge = 80;
+    let speed = 0;
+    if (drag.clientY !== undefined) {
+      if (drag.clientY < edge) speed = -8;
+      else if (drag.clientY > window.innerHeight - edge) speed = 8;
+    }
+    if (speed !== 0) {
+      const before = window.scrollY;
+      window.scrollBy(0, speed);
+      drag.pageY += window.scrollY - before;
+      updateDragPosition();
+    }
+    drag.scrollTimer = requestAnimationFrame(autoScroll);
+  };
+
+  const endDrag = (e) => {
+    if (!drag || e.pointerId !== drag.pointerId) return;
+    const { card, handle } = drag;
+
+    cancelAnimationFrame(drag.scrollTimer);
+    handle.removeEventListener('pointermove', onDragMove);
+    handle.removeEventListener('pointerup', endDrag);
+    handle.removeEventListener('pointercancel', endDrag);
+    handle.removeEventListener('lostpointercapture', endDrag);
+    if (handle.hasPointerCapture(e.pointerId)) handle.releasePointerCapture(e.pointerId);
+
+    card.style.transform = '';
+    card.classList.remove('dragging');
+    document.body.classList.remove('is-dragging');
+    drag = null;
+
+    // 画面のカードの並び順に合わせて todos を並べ替えて保存
+    const order = [...document.querySelectorAll('#todos > li')].map((li) => li.dataset.id);
+    todos.sort((a, b) => order.indexOf(String(a.id)) - order.indexOf(String(b.id)));
+    saveTodos();
+
+    // 並び替えを一度使ったら、案内はもう出さない
+    try {
+      localStorage.setItem(DRAG_HINT_KEY, '1');
+    } catch (e) {
+      // 保存できなくても並び替え自体には影響しない
+    }
+    updateDragHint();
   };
 
   // ===== 種目の追加 =====
@@ -386,6 +533,7 @@ import { loadProfile, saveProfile, saveLog } from './firebase.js';
       renderTodo(todo);
     });
     saveTodos();
+    updateDragHint();
 
     // 追加した最初のカードまでスクロール
     document.querySelectorAll('#todos > li')[firstNewIndex]
