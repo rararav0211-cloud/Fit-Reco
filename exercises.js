@@ -8,6 +8,9 @@ import { createInfoButton } from './exercise-info.js';
   const CATEGORIES = ['胸', '背中', '脚', '肩', '腕', '腹', CARDIO_CATEGORY];
 
   // 初めから用意しておく種目（bw: true は自重種目なので初期重量 0kg）
+  // 【約束】種目名を変えたり、新しい種目を追加したりしたときは、
+  // exercise-info.js の EXERCISE_INFO の説明も必ず変更・追加する。
+  // （名前が一致しないと、説明の代わりに「自分で追加した種目のため、説明はありません」と表示される）
   const DEFAULT_EXERCISES = [
     { name: 'ベンチプレス', category: '胸' },
     { name: 'ダンベルプレス', category: '胸' },

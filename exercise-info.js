@@ -398,7 +398,9 @@ const EXERCISE_INFO = {
   },
 };
 
-export const getExerciseInfo = (name) => EXERCISE_INFO[name] || null;
+// Object.hasOwn で、EXERCISE_INFO に書いた種目かどうかを確かめる
+// （EXERCISE_INFO[name] だけだと、「constructor」などの名前でも何かが返ってきてしまう）
+export const getExerciseInfo = (name) => (Object.hasOwn(EXERCISE_INFO, name) ? EXERCISE_INFO[name] : null);
 
 // ===== 説明のモーダル =====
 
