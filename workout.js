@@ -1,4 +1,5 @@
 import { loadProfile, saveProfile, saveLog } from './firebase.js';
+import { createInfoButton } from './exercise-info.js';
 
 {
   // 今日の日付を表示
@@ -200,6 +201,8 @@ import { loadProfile, saveProfile, saveLog } from './firebase.js';
     const title = document.createElement('h2');
     title.textContent = todo.title;
     cardHeader.appendChild(title);
+    // 種目の説明を開くボタン（持ち手とは別の場所なので、押しても並び替えは始まらない）
+    cardHeader.appendChild(createInfoButton(todo.title));
 
     // ドラッグ用の持ち手（カードの左側いっぱい。ここをつかんで上下に動かす）
     const handle = document.createElement('button');

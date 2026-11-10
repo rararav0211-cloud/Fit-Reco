@@ -1,4 +1,5 @@
 import { loadProfile, saveProfile } from './firebase.js';
+import { createInfoButton } from './exercise-info.js';
 
 {
   // ===== 種目リスト =====
@@ -140,6 +141,9 @@ import { loadProfile, saveProfile } from './firebase.js';
           label.appendChild(badge);
         }
         li.appendChild(label);
+
+        // 説明を開くボタン（label の外に置き、押しても選択が切り替わらないようにする）
+        li.appendChild(createInfoButton(ex.name));
 
         // 自分で追加した種目だけリストから削除できる
         if (ex.custom) {
