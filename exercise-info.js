@@ -457,15 +457,10 @@ const buildBody = (info) => {
   body.appendChild(createBodyMap(info.main));
 
   const muscleList = el('dl', 'info-muscles');
-  const addMuscles = (label, keys, isMain) => {
-    if (keys.length === 0) return;
-    const dt = el('dt', isMain ? 'is-main' : '', label);
-    muscleList.appendChild(dt);
-    const dd = el('dd');
-    keys.forEach((key) => dd.appendChild(el('span', 'info-muscle-name', MUSCLE_NAMES[key] || key)));
-    muscleList.appendChild(dd);
-  };
-  addMuscles('主に使う筋肉', info.main, true);
+  muscleList.appendChild(el('dt', 'is-main', '主に使う筋肉'));
+  const mainNames = el('dd');
+  info.main.forEach((key) => mainNames.appendChild(el('span', 'info-muscle-name', MUSCLE_NAMES[key] || key)));
+  muscleList.appendChild(mainNames);
   if (info.extra) {
     muscleList.appendChild(el('dt', '', 'そのほか'));
     muscleList.appendChild(el('dd', '', info.extra));
