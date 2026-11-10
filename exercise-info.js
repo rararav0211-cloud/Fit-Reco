@@ -1,6 +1,6 @@
 // ===== 種目の説明 =====
 // 種目を選ぶ画面とワークアウト画面の両方で使う。
-// 重量は初心者向けの目安（男性・女性の両方を表示する）。
+// 重量は初心者が始めるときの目安（男性・女性の両方を、幅ではなく1つの数字で表示する）。
 
 // type: 'weight'（重量あり）/ 'bw'（自重）/ 'cardio'（有酸素）
 const EXERCISE_INFO = {
@@ -8,8 +8,8 @@ const EXERCISE_INFO = {
   'ベンチプレス': {
     type: 'weight',
     muscles: '胸（大胸筋）、肩の前側、二の腕の裏側',
-    male: '20〜40kg',
-    female: '10〜20kg',
+    male: '20kg',
+    female: '10kg',
     reps: '10回 × 3セット',
     points: [
       '肩甲骨を寄せて胸を張り、背中に少しアーチを作る',
@@ -20,8 +20,8 @@ const EXERCISE_INFO = {
   'ダンベルプレス': {
     type: 'weight',
     muscles: '胸（大胸筋）、肩の前側、二の腕の裏側',
-    male: '片手 8〜12kg',
-    female: '片手 3〜5kg',
+    male: '片手 8kg',
+    female: '片手 3kg',
     reps: '10回 × 3セット',
     points: [
       '肩甲骨を寄せて胸を張ったまま行う',
@@ -32,8 +32,8 @@ const EXERCISE_INFO = {
   'チェストプレス（マシン）': {
     type: 'weight',
     muscles: '胸（大胸筋）、肩の前側、二の腕の裏側',
-    male: '25〜35kg',
-    female: '10〜20kg',
+    male: '25kg',
+    female: '10kg',
     reps: '10〜12回 × 3セット',
     points: [
       'グリップが胸の高さに来るようにシートを調整する',
@@ -44,8 +44,8 @@ const EXERCISE_INFO = {
   'ペックフライ（マシン）': {
     type: 'weight',
     muscles: '胸（大胸筋）',
-    male: '20〜30kg',
-    female: '10〜15kg',
+    male: '20kg',
+    female: '10kg',
     reps: '12回 × 3セット',
     points: [
       'ひじを軽く曲げた形のまま、腕で円を描くように閉じる',
@@ -68,8 +68,8 @@ const EXERCISE_INFO = {
   'ラットプルダウン': {
     type: 'weight',
     muscles: '背中（広背筋）、腕の前側',
-    male: '30〜40kg',
-    female: '15〜25kg',
+    male: '30kg',
+    female: '15kg',
     reps: '10〜12回 × 3セット',
     points: [
       '胸を張り、バーを鎖骨のあたりに向かって引く',
@@ -80,8 +80,8 @@ const EXERCISE_INFO = {
   'シーテッドロー': {
     type: 'weight',
     muscles: '背中（広背筋・僧帽筋）、腕の前側',
-    male: '30〜40kg',
-    female: '15〜25kg',
+    male: '30kg',
+    female: '15kg',
     reps: '10〜12回 × 3セット',
     points: [
       '背すじを伸ばしたまま、お腹に向かって引く',
@@ -92,8 +92,8 @@ const EXERCISE_INFO = {
   'ワンハンドローイング': {
     type: 'weight',
     muscles: '背中（広背筋）、腕の前側',
-    male: '片手 10〜14kg',
-    female: '片手 4〜6kg',
+    male: '片手 10kg',
+    female: '片手 4kg',
     reps: '左右 10回 × 3セット',
     points: [
       'ベンチに片手・片ひざをつき、背中をまっすぐに保つ',
@@ -104,8 +104,8 @@ const EXERCISE_INFO = {
   'デッドリフト': {
     type: 'weight',
     muscles: '背中全体、お尻、太ももの裏側',
-    male: '40〜60kg',
-    female: '20〜30kg',
+    male: '40kg',
+    female: '20kg',
     reps: '8回 × 3セット',
     points: [
       '背中を丸めず、まっすぐに保ったまま持ち上げる',
@@ -128,8 +128,8 @@ const EXERCISE_INFO = {
   'スクワット': {
     type: 'weight',
     muscles: '太もも（前・裏）、お尻',
-    male: '30〜50kg',
-    female: '20〜30kg',
+    male: '30kg',
+    female: '20kg',
     reps: '10回 × 3セット',
     points: [
       '足は肩幅くらいに開き、つま先とひざを同じ向きにする',
@@ -140,8 +140,8 @@ const EXERCISE_INFO = {
   'レッグプレス': {
     type: 'weight',
     muscles: '太もも（前・裏）、お尻',
-    male: '60〜80kg',
-    female: '30〜50kg',
+    male: '60kg',
+    female: '30kg',
     reps: '10〜12回 × 3セット',
     points: [
       '腰とお尻をシートから浮かさない',
@@ -152,8 +152,8 @@ const EXERCISE_INFO = {
   'レッグエクステンション': {
     type: 'weight',
     muscles: '太ももの前側（大腿四頭筋）',
-    male: '20〜30kg',
-    female: '10〜15kg',
+    male: '20kg',
+    female: '10kg',
     reps: '12回 × 3セット',
     points: [
       'ひざの位置がマシンの回転軸に合うようにシートを調整する',
@@ -164,8 +164,8 @@ const EXERCISE_INFO = {
   'レッグカール': {
     type: 'weight',
     muscles: '太ももの裏側（ハムストリングス）',
-    male: '15〜25kg',
-    female: '10〜15kg',
+    male: '15kg',
+    female: '10kg',
     reps: '12回 × 3セット',
     points: [
       'ひざの位置がマシンの回転軸に合うようにシートを調整する',
@@ -188,8 +188,8 @@ const EXERCISE_INFO = {
   'ショルダープレス': {
     type: 'weight',
     muscles: '肩（三角筋）、二の腕の裏側',
-    male: '片手 6〜10kg',
-    female: '片手 2〜4kg',
+    male: '片手 6kg',
+    female: '片手 2kg',
     reps: '10回 × 3セット',
     points: [
       'ダンベルを耳の横から頭の上に押し上げる',
@@ -200,8 +200,8 @@ const EXERCISE_INFO = {
   'サイドレイズ': {
     type: 'weight',
     muscles: '肩の横側（三角筋）',
-    male: '片手 3〜5kg',
-    female: '片手 1〜2kg',
+    male: '片手 3kg',
+    female: '片手 1kg',
     reps: '12〜15回 × 3セット',
     points: [
       'ひじを軽く曲げ、肩の高さまで横に上げる',
@@ -212,8 +212,8 @@ const EXERCISE_INFO = {
   'フロントレイズ': {
     type: 'weight',
     muscles: '肩の前側（三角筋）',
-    male: '片手 3〜5kg',
-    female: '片手 1〜2kg',
+    male: '片手 3kg',
+    female: '片手 1kg',
     reps: '12回 × 3セット',
     points: [
       '腕を前に、肩の高さまで上げる',
@@ -224,8 +224,8 @@ const EXERCISE_INFO = {
   'リアレイズ': {
     type: 'weight',
     muscles: '肩の後ろ側（三角筋）',
-    male: '片手 3〜5kg',
-    female: '片手 1〜2kg',
+    male: '片手 3kg',
+    female: '片手 1kg',
     reps: '12〜15回 × 3セット',
     points: [
       '上半身を前に倒し、背中をまっすぐに保つ',
@@ -238,8 +238,8 @@ const EXERCISE_INFO = {
   'アームカール': {
     type: 'weight',
     muscles: '腕の前側（上腕二頭筋）',
-    male: '片手 6〜10kg',
-    female: '片手 2〜4kg',
+    male: '片手 6kg',
+    female: '片手 2kg',
     reps: '10〜12回 × 3セット',
     points: [
       'ひじを体の横に固定して動かさない',
@@ -250,8 +250,8 @@ const EXERCISE_INFO = {
   'ハンマーカール': {
     type: 'weight',
     muscles: '腕の前側（上腕二頭筋・腕橈骨筋）',
-    male: '片手 6〜10kg',
-    female: '片手 2〜4kg',
+    male: '片手 6kg',
+    female: '片手 2kg',
     reps: '10〜12回 × 3セット',
     points: [
       '手のひらを内側に向けたまま（縦に持って）上げる',
@@ -262,8 +262,8 @@ const EXERCISE_INFO = {
   'トライセプスプッシュダウン': {
     type: 'weight',
     muscles: '二の腕の裏側（上腕三頭筋）',
-    male: '15〜25kg',
-    female: '5〜10kg',
+    male: '15kg',
+    female: '5kg',
     reps: '12回 × 3セット',
     points: [
       'ひじを体の横に固定し、ひじから先だけを動かす',
@@ -274,8 +274,8 @@ const EXERCISE_INFO = {
   'フレンチプレス': {
     type: 'weight',
     muscles: '二の腕の裏側（上腕三頭筋）',
-    male: '8〜12kg（両手で1つ）',
-    female: '3〜5kg（両手で1つ）',
+    male: '8kg（両手で1つ）',
+    female: '3kg（両手で1つ）',
     reps: '10〜12回 × 3セット',
     points: [
       'ダンベルを両手で持ち、頭の後ろに下ろす',
@@ -440,7 +440,7 @@ const buildBody = (info) => {
   body.appendChild(ul);
 
   const NOTES = {
-    weight: '※ 重量・回数は初心者向けの目安です。フォームが崩れない重さで、無理のない範囲で行ってください。',
+    weight: '※ 重量・回数は初心者向けの目安です。まずはこの重さから始め、フォームが崩れずにできるようになったら少しずつ増やしてください。',
     bw: '※ 回数は初心者向けの目安です。フォームが崩れない範囲で、無理のない回数にしてください。',
     cardio: '※ 時間・距離は初心者向けの目安です。体調に合わせて、無理のない範囲で行ってください。',
   };
