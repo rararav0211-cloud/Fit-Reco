@@ -1,19 +1,20 @@
-import { createBodyMap } from './body-map.js';
+import { createBodyMap, MUSCLE_NAMES } from './body-map.js';
 
 // ===== 種目の説明 =====
 // 種目を選ぶ画面とワークアウト画面の両方で使う。
 // 重量は初心者が始めるときの目安（男性・女性の両方を、幅ではなく1つの数字で表示する）。
 
 // type: 'weight'（重量あり）/ 'bw'（自重）/ 'cardio'（有酸素）
-// muscles: 鍛えられる部位（文章。補助で使う筋肉も書く）
-// main: 筋肉の図で薄い青にする、主に使う筋肉（名前は body-map.js を参照）
+// main: 主に使う筋肉（筋肉の図で薄い青にする。名前は body-map.js の MUSCLE_NAMES を参照）
+// sub: 補助で使う筋肉（図では色を付けず、名前だけ表示する）
+// extra: 筋肉のほかに鍛えられるもの（有酸素の心肺機能など）
 // equipment: 使う器具
 const EXERCISE_INFO = {
   // ----- 胸 -----
   'ベンチプレス': {
     type: 'weight',
-    muscles: '胸（大胸筋）、肩の前側、二の腕の裏側',
-    main: ['chest'],
+    main: ['chest-middle', 'chest-lower'],
+    sub: ['delt-front', 'triceps'],
     equipment: 'バーベル、ベンチ',
     male: '20kg',
     female: '10kg',
@@ -26,8 +27,8 @@ const EXERCISE_INFO = {
   },
   'ダンベルプレス': {
     type: 'weight',
-    muscles: '胸（大胸筋）、肩の前側、二の腕の裏側',
-    main: ['chest'],
+    main: ['chest-middle', 'chest-lower'],
+    sub: ['delt-front', 'triceps'],
     equipment: 'ダンベル、ベンチ',
     male: '片手 8kg',
     female: '片手 3kg',
@@ -40,8 +41,8 @@ const EXERCISE_INFO = {
   },
   'チェストプレス（マシン）': {
     type: 'weight',
-    muscles: '胸（大胸筋）、肩の前側、二の腕の裏側',
-    main: ['chest'],
+    main: ['chest-middle'],
+    sub: ['delt-front', 'triceps'],
     equipment: 'チェストプレスマシン',
     male: '25kg',
     female: '10kg',
@@ -54,8 +55,8 @@ const EXERCISE_INFO = {
   },
   'ペックフライ（マシン）': {
     type: 'weight',
-    muscles: '胸（大胸筋）',
-    main: ['chest'],
+    main: ['chest-middle'],
+    sub: ['delt-front'],
     equipment: 'ペックフライマシン',
     male: '20kg',
     female: '10kg',
@@ -68,8 +69,8 @@ const EXERCISE_INFO = {
   },
   '腕立て伏せ': {
     type: 'bw',
-    muscles: '胸（大胸筋）、肩の前側、二の腕の裏側',
-    main: ['chest'],
+    main: ['chest-middle', 'chest-lower'],
+    sub: ['delt-front', 'triceps'],
     equipment: 'なし',
     reps: '10回 × 3セット（きつければひざをついて行う）',
     points: [
@@ -82,8 +83,8 @@ const EXERCISE_INFO = {
   // ----- 背中 -----
   'ラットプルダウン': {
     type: 'weight',
-    muscles: '背中（広背筋）、腕の前側',
     main: ['lats'],
+    sub: ['traps-lower', 'biceps'],
     equipment: 'ラットプルダウンマシン',
     male: '30kg',
     female: '15kg',
@@ -96,8 +97,8 @@ const EXERCISE_INFO = {
   },
   'シーテッドロー': {
     type: 'weight',
-    muscles: '背中（広背筋・僧帽筋）、腕の前側',
-    main: ['lats', 'traps'],
+    main: ['lats', 'traps-middle'],
+    sub: ['delt-rear', 'biceps'],
     equipment: 'シーテッドローマシン',
     male: '30kg',
     female: '15kg',
@@ -110,8 +111,8 @@ const EXERCISE_INFO = {
   },
   'ワンハンドローイング': {
     type: 'weight',
-    muscles: '背中（広背筋）、腕の前側',
     main: ['lats'],
+    sub: ['traps-middle', 'delt-rear', 'biceps'],
     equipment: 'ダンベル、ベンチ',
     male: '片手 10kg',
     female: '片手 4kg',
@@ -124,8 +125,8 @@ const EXERCISE_INFO = {
   },
   'デッドリフト': {
     type: 'weight',
-    muscles: '背中全体、お尻、太ももの裏側',
-    main: ['lower-back', 'glutes', 'hamstrings'],
+    main: ['erector', 'glute-max', 'hamstrings'],
+    sub: ['traps-upper', 'quads', 'forearm'],
     equipment: 'バーベル',
     male: '40kg',
     female: '20kg',
@@ -138,8 +139,8 @@ const EXERCISE_INFO = {
   },
   '懸垂': {
     type: 'bw',
-    muscles: '背中（広背筋）、腕の前側',
     main: ['lats'],
+    sub: ['traps-lower', 'biceps'],
     equipment: '懸垂バー',
     reps: 'できる回数 × 3セット（できなければ斜め懸垂やアシストマシンで行う）',
     points: [
@@ -152,8 +153,8 @@ const EXERCISE_INFO = {
   // ----- 脚 -----
   'スクワット': {
     type: 'weight',
-    muscles: '太もも（前・裏）、お尻',
-    main: ['quads', 'glutes'],
+    main: ['quads', 'glute-max'],
+    sub: ['hamstrings', 'adductors', 'erector'],
     equipment: 'バーベル、スクワットラック（パワーラック）',
     male: '30kg',
     female: '20kg',
@@ -166,8 +167,8 @@ const EXERCISE_INFO = {
   },
   'レッグプレス': {
     type: 'weight',
-    muscles: '太もも（前・裏）、お尻',
-    main: ['quads', 'glutes'],
+    main: ['quads', 'glute-max'],
+    sub: ['hamstrings', 'adductors'],
     equipment: 'レッグプレスマシン',
     male: '60kg',
     female: '30kg',
@@ -180,8 +181,8 @@ const EXERCISE_INFO = {
   },
   'レッグエクステンション': {
     type: 'weight',
-    muscles: '太ももの前側（大腿四頭筋）',
     main: ['quads'],
+    sub: [],
     equipment: 'レッグエクステンションマシン',
     male: '20kg',
     female: '10kg',
@@ -194,8 +195,8 @@ const EXERCISE_INFO = {
   },
   'レッグカール': {
     type: 'weight',
-    muscles: '太ももの裏側（ハムストリングス）',
     main: ['hamstrings'],
+    sub: ['calves'],
     equipment: 'レッグカールマシン',
     male: '15kg',
     female: '10kg',
@@ -208,8 +209,8 @@ const EXERCISE_INFO = {
   },
   'ランジ': {
     type: 'bw',
-    muscles: '太もも（前・裏）、お尻',
-    main: ['quads', 'glutes'],
+    main: ['quads', 'glute-max'],
+    sub: ['hamstrings', 'glute-med', 'adductors'],
     equipment: 'なし',
     reps: '左右 10回 × 3セット',
     points: [
@@ -222,8 +223,8 @@ const EXERCISE_INFO = {
   // ----- 肩 -----
   'ショルダープレス': {
     type: 'weight',
-    muscles: '肩（三角筋）、二の腕の裏側',
     main: ['delt-front', 'delt-side'],
+    sub: ['triceps', 'traps-upper'],
     equipment: 'ダンベル、ベンチ（背もたれを立てる）',
     male: '片手 6kg',
     female: '片手 2kg',
@@ -236,8 +237,8 @@ const EXERCISE_INFO = {
   },
   'サイドレイズ': {
     type: 'weight',
-    muscles: '肩の横側（三角筋）',
     main: ['delt-side'],
+    sub: ['traps-upper'],
     equipment: 'ダンベル',
     male: '片手 3kg',
     female: '片手 1kg',
@@ -250,8 +251,8 @@ const EXERCISE_INFO = {
   },
   'フロントレイズ': {
     type: 'weight',
-    muscles: '肩の前側（三角筋）',
     main: ['delt-front'],
+    sub: ['chest-upper'],
     equipment: 'ダンベル',
     male: '片手 3kg',
     female: '片手 1kg',
@@ -264,8 +265,8 @@ const EXERCISE_INFO = {
   },
   'リアレイズ': {
     type: 'weight',
-    muscles: '肩の後ろ側（三角筋）',
     main: ['delt-rear'],
+    sub: ['traps-middle'],
     equipment: 'ダンベル',
     male: '片手 3kg',
     female: '片手 1kg',
@@ -280,8 +281,8 @@ const EXERCISE_INFO = {
   // ----- 腕 -----
   'アームカール': {
     type: 'weight',
-    muscles: '腕の前側（上腕二頭筋）',
     main: ['biceps'],
+    sub: ['forearm'],
     equipment: 'ダンベル',
     male: '片手 6kg',
     female: '片手 2kg',
@@ -294,8 +295,8 @@ const EXERCISE_INFO = {
   },
   'ハンマーカール': {
     type: 'weight',
-    muscles: '腕の前側（上腕二頭筋・腕橈骨筋）',
     main: ['biceps', 'forearm'],
+    sub: [],
     equipment: 'ダンベル',
     male: '片手 6kg',
     female: '片手 2kg',
@@ -308,8 +309,8 @@ const EXERCISE_INFO = {
   },
   'トライセプスプッシュダウン': {
     type: 'weight',
-    muscles: '二の腕の裏側（上腕三頭筋）',
     main: ['triceps'],
+    sub: [],
     equipment: 'ケーブルマシン（ロープまたはバーを付ける）',
     male: '15kg',
     female: '5kg',
@@ -322,8 +323,8 @@ const EXERCISE_INFO = {
   },
   'フレンチプレス': {
     type: 'weight',
-    muscles: '二の腕の裏側（上腕三頭筋）',
     main: ['triceps'],
+    sub: [],
     equipment: 'ダンベル、ベンチ',
     male: '8kg（両手で1つ）',
     female: '3kg（両手で1つ）',
@@ -338,8 +339,8 @@ const EXERCISE_INFO = {
   // ----- 腹 -----
   'クランチ': {
     type: 'bw',
-    muscles: 'お腹（腹直筋）',
-    main: ['abs'],
+    main: ['abs-upper'],
+    sub: ['abs-lower', 'obliques'],
     equipment: 'なし（マットがあるとよい）',
     reps: '15回 × 3セット',
     points: [
@@ -350,8 +351,8 @@ const EXERCISE_INFO = {
   },
   'レッグレイズ': {
     type: 'bw',
-    muscles: 'お腹（腹直筋の下の方）',
-    main: ['abs'],
+    main: ['abs-lower'],
+    sub: ['abs-upper'],
     equipment: 'なし（マットがあるとよい）',
     reps: '10回 × 3セット',
     points: [
@@ -362,8 +363,8 @@ const EXERCISE_INFO = {
   },
   'アブローラー': {
     type: 'bw',
-    muscles: 'お腹全体、体幹',
-    main: ['abs'],
+    main: ['abs-upper', 'abs-lower'],
+    sub: ['obliques', 'lats'],
     equipment: 'アブローラー、マット',
     reps: 'ひざをついて 5〜10回 × 3セット',
     points: [
@@ -376,8 +377,9 @@ const EXERCISE_INFO = {
   // ----- 有酸素 -----
   'ランニング': {
     type: 'cardio',
-    muscles: '全身、心肺機能',
     main: ['quads', 'hamstrings', 'calves'],
+    sub: ['glute-max', 'tibialis'],
+    extra: '心肺機能',
     equipment: 'なし（ランニングマシンでもよい）',
     reps: '20〜30分（3〜5km）',
     points: [
@@ -388,8 +390,9 @@ const EXERCISE_INFO = {
   },
   'ウォーキング': {
     type: 'cardio',
-    muscles: '全身、心肺機能',
     main: ['quads', 'hamstrings', 'calves'],
+    sub: ['glute-max', 'tibialis'],
+    extra: '心肺機能',
     equipment: 'なし（ランニングマシンでもよい）',
     reps: '30〜60分（3〜5km）',
     points: [
@@ -400,8 +403,9 @@ const EXERCISE_INFO = {
   },
   'エアロバイク': {
     type: 'cardio',
-    muscles: '脚、心肺機能',
     main: ['quads'],
+    sub: ['glute-max', 'hamstrings', 'calves'],
+    extra: '心肺機能',
     equipment: 'エアロバイク',
     reps: '20〜30分',
     points: [
@@ -412,8 +416,9 @@ const EXERCISE_INFO = {
   },
   'クロストレーナー': {
     type: 'cardio',
-    muscles: '全身、心肺機能',
-    main: ['quads', 'glutes'],
+    main: ['quads', 'glute-max'],
+    sub: ['hamstrings', 'calves'],
+    extra: '心肺機能',
     equipment: 'クロストレーナー',
     reps: '20〜30分',
     points: [
@@ -481,11 +486,23 @@ const buildBody = (info) => {
 
   body.appendChild(el('h3', 'info-heading', '鍛えられる部位'));
   body.appendChild(createBodyMap(info.main));
-  const legend = el('p', 'info-legend');
-  legend.appendChild(el('span', 'info-legend-swatch'));
-  legend.appendChild(document.createTextNode('主に使う筋肉'));
-  body.appendChild(legend);
-  body.appendChild(el('p', 'info-text', info.muscles));
+
+  const muscleList = el('dl', 'info-muscles');
+  const addMuscles = (label, keys, isMain) => {
+    if (keys.length === 0) return;
+    const dt = el('dt', isMain ? 'is-main' : '', label);
+    muscleList.appendChild(dt);
+    const dd = el('dd');
+    keys.forEach((key) => dd.appendChild(el('span', 'info-muscle-name', MUSCLE_NAMES[key] || key)));
+    muscleList.appendChild(dd);
+  };
+  addMuscles('主に使う筋肉', info.main, true);
+  addMuscles('補助で使う筋肉', info.sub, false);
+  if (info.extra) {
+    muscleList.appendChild(el('dt', '', 'そのほか'));
+    muscleList.appendChild(el('dd', '', info.extra));
+  }
+  body.appendChild(muscleList);
 
   body.appendChild(el('h3', 'info-heading', '使う器具'));
   body.appendChild(el('p', 'info-text', info.equipment));
