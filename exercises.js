@@ -1,4 +1,5 @@
 import { loadProfile, saveProfile } from './firebase.js';
+import { createInfoButton } from './exercise-info.js';
 
 {
   // ===== 種目リスト =====
@@ -7,6 +8,9 @@ import { loadProfile, saveProfile } from './firebase.js';
   const CATEGORIES = ['胸', '背中', '脚', '肩', '腕', '腹', CARDIO_CATEGORY];
 
   // 初めから用意しておく種目（bw: true は自重種目なので初期重量 0kg）
+  // 【約束】種目名を変えたり、新しい種目を追加したりしたときは、
+  // exercise-info.js の EXERCISE_INFO の説明も必ず変更・追加する。
+  // （名前が一致しないと、説明の代わりに「自分で追加した種目のため、説明はありません」と表示される）
   const DEFAULT_EXERCISES = [
     { name: 'ベンチプレス', category: '胸' },
     { name: 'ダンベルプレス', category: '胸' },
@@ -140,6 +144,9 @@ import { loadProfile, saveProfile } from './firebase.js';
           label.appendChild(badge);
         }
         li.appendChild(label);
+
+        // 説明を開くボタン（label の外に置き、押しても選択が切り替わらないようにする）
+        li.appendChild(createInfoButton(ex.name));
 
         // 自分で追加した種目だけリストから削除できる
         if (ex.custom) {
