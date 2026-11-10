@@ -203,13 +203,13 @@ button.info-modal-close {
   flex-basis: 160px;
 }
 
-/* 首からお腹までを拡大するときは大きめに表示する */
-.body-map-wrap.is-upper .body-map-view {
-  flex-basis: 170px;
+/* 上半身・下半身を拡大するときは大きめに表示する */
+.body-map-wrap.is-zoom .body-map-view {
+  flex-basis: 150px;
 }
 
-.body-map-wrap.is-upper .body-map-view:only-child {
-  flex-basis: 230px;
+.body-map-wrap.is-zoom .body-map-view:only-child {
+  flex-basis: 210px;
 }
 
 .body-map-view figcaption {
@@ -222,6 +222,7 @@ button.info-modal-close {
   display: block;
   width: 100%;
   height: auto;
+  max-height: 300px;
 }
 
 .body-map .bm-skin {
@@ -274,13 +275,10 @@ button.info-modal-close {
 .info-muscle-name {
   padding: 3px 10px;
   font-size: 13px;
-  background-color: #f1f2f6;
+  background-color: #e3f2ff;
   border-radius: 999px;
 }
 
-.info-muscles dt.is-main + dd .info-muscle-name {
-  background-color: #e3f2ff;
-}
 
 /* 腹筋の割れ目などの線 */
 .body-map .bm-line {

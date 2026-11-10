@@ -1,6 +1,6 @@
 // ===== 筋肉の図（体の前と後ろ） =====
 // 筋肉ごとに data-muscle の名前を付けてあり、主に使う筋肉だけ薄い青にする。
-// 主に使う筋肉が上半身（首からお腹まで）だけのときは、その部分を拡大して表示する。
+// 主に使う筋肉が上半身（首からお腹まで）だけ、または下半身（お尻から足首まで）だけのときは、その部分を拡大して表示する。
 
 // 筋肉の名前（data-muscle）と、画面に出す名前
 export const MUSCLE_NAMES = {
@@ -46,8 +46,14 @@ const UPPER_MUSCLES = [
   'traps-upper', 'traps-middle', 'traps-lower', 'lats', 'erector',
 ];
 
+// お尻から足首までに入る筋肉（これだけのときは拡大する）
+const LOWER_MUSCLES = [
+  'glute-max', 'glute-med', 'quads', 'hamstrings', 'adductors', 'tibialis', 'calves',
+];
+
 const FULL_VIEWBOX = '0 0 200 400';
 const UPPER_VIEWBOX = '40 44 120 154';
+const LOWER_VIEWBOX = '60 184 80 206';
 
 const FRONT_SVG = `
 <ellipse class="bm-skin" cx="100" cy="30" rx="16" ry="20"/>
@@ -131,10 +137,20 @@ const BACK_SVG = `
 <path class="bm-muscle" data-muscle="calves" d="M 128 314 C 137 330 135 352 126 371 L 116 371 C 109 350 109 330 114 314 Z"/>
 `;
 
+let clipCount = 0;
+
 const createView = (svgInner, label, viewBox, mainMuscles) => {
   const fig = document.createElement('figure');
   fig.className = 'body-map-view';
-  fig.innerHTML = `<svg class="body-map" viewBox="${viewBox}" aria-hidden="true">${svgInner}</svg>`;
+  // 拡大したときに、表示する範囲の外（手など）が見えないように切り取る
+  const [x, y, w, h] = viewBox.split(' ');
+  clipCount += 1;
+  const clipId = `body-map-clip-${clipCount}`;
+  fig.innerHTML = `
+    <svg class="body-map" viewBox="${viewBox}" aria-hidden="true">
+      <clipPath id="${clipId}"><rect x="${x}" y="${y}" width="${w}" height="${h}"/></clipPath>
+      <g clip-path="url(#${clipId})">${svgInner}</g>
+    </svg>`;
   fig.querySelectorAll('[data-muscle]').forEach((part) => {
     if (mainMuscles.includes(part.dataset.muscle)) part.classList.add('is-main');
   });
@@ -145,8 +161,12 @@ const createView = (svgInner, label, viewBox, mainMuscles) => {
 };
 
 export const createBodyMap = (mainMuscles = []) => {
-  const isUpper = mainMuscles.length > 0 && mainMuscles.every((m) => UPPER_MUSCLES.includes(m));
-  const viewBox = isUpper ? UPPER_VIEWBOX : FULL_VIEWBOX;
+  const hasMain = mainMuscles.length > 0;
+  const isUpper = hasMain && mainMuscles.every((m) => UPPER_MUSCLES.includes(m));
+  const isLower = hasMain && mainMuscles.every((m) => LOWER_MUSCLES.includes(m));
+  let viewBox = FULL_VIEWBOX;
+  if (isUpper) viewBox = UPPER_VIEWBOX;
+  if (isLower) viewBox = LOWER_VIEWBOX;
 
   // 主に使う筋肉が描かれている向き（前・後ろ）だけ表示する
   let showFront = mainMuscles.some((m) => FRONT_MUSCLES.includes(m));
@@ -158,7 +178,7 @@ export const createBodyMap = (mainMuscles = []) => {
 
   const wrap = document.createElement('div');
   wrap.className = 'body-map-wrap';
-  if (isUpper) wrap.classList.add('is-upper');
+  if (isUpper || isLower) wrap.classList.add('is-zoom');
   if (showFront) wrap.appendChild(createView(FRONT_SVG, '前', viewBox, mainMuscles));
   if (showBack) wrap.appendChild(createView(BACK_SVG, '後ろ', viewBox, mainMuscles));
   return wrap;
